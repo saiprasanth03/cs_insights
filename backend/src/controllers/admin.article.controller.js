@@ -1,0 +1,125 @@
+"use strict";
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var admin_article_controller_exports = {};
+__export(admin_article_controller_exports, {
+  createArticle: () => createArticle,
+  deleteArticle: () => deleteArticle,
+  getArticle: () => getArticle,
+  getArticles: () => getArticles,
+  updateArticle: () => updateArticle
+});
+module.exports = __toCommonJS(admin_article_controller_exports);
+var import_Article = require("../models/Article");
+var import_NewsletterCampaign = require("../models/NewsletterCampaign");
+var import_Subscriber = require("../models/Subscriber");
+const emailService = require("../services/email.service");
+
+const createArticle = async (req, res) => {
+  try {
+    const { sendNewsletter, ...articleData } = req.body;
+    
+    const article = await import_Article.Article.create({
+      ...articleData,
+      author: req.user?.userId
+    });
+
+    // If the flag was checked and article is published, send it out as a newsletter
+    if (sendNewsletter && article.status === 'PUBLISHED') {
+      const campaign = await import_NewsletterCampaign.NewsletterCampaign.create({
+        subject: article.title,
+        title: article.title,
+        contentHtml: article.content, // Fallback, normally we rely on template
+        contentPlain: article.excerpt || article.title,
+        status: "SENT",
+        type: "ARTICLE",
+        createdBy: req.user?.userId,
+        sentAt: new Date()
+      });
+
+      // Send asynchronously without blocking the response
+      import_Subscriber.Subscriber.find({ status: 'ACTIVE' }).then(subscribers => {
+        console.log(`[NEWSLETTER] Found ${subscribers.length} active subscribers to send article to.`);
+        emailService.sendNewsletter(
+          {
+            subject: article.title,
+            title: article.title,
+            content: article.content,
+            coverImage: article.coverImage,
+            author: req.user?.name || 'CS Insights'
+          },
+          subscribers
+        ).catch(console.error);
+      });
+    }
+
+    res.status(201).json({ success: true, data: article });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+const getArticles = async (req, res) => {
+  try {
+    const articles = await import_Article.Article.find().populate("category", "name slug").populate("author", "name email");
+    res.status(200).json({ success: true, count: articles.length, data: articles });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getArticle = async (req, res) => {
+  try {
+    const article = await import_Article.Article.findById(req.params.id)
+      .populate("category", "name slug")
+      .populate("author", "name email");
+      
+    if (!article) {
+      res.status(404).json({ success: false, message: "Article not found" });
+      return;
+    }
+    
+    res.status(200).json({ success: true, data: article });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateArticle = async (req, res) => {
+  try {
+    const article = await import_Article.Article.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!article) {
+      res.status(404).json({ success: false, message: "Article not found" });
+      return;
+    }
+    res.status(200).json({ success: true, data: article });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+const deleteArticle = async (req, res) => {
+  try {
+    const article = await import_Article.Article.findByIdAndDelete(req.params.id);
+    if (!article) {
+      res.status(404).json({ success: false, message: "Article not found" });
+      return;
+    }
+    res.status(200).json({ success: true, data: {} });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
