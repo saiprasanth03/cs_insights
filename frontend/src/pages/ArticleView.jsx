@@ -202,8 +202,8 @@ export default function ArticleView() {
         </div>
 
         {/* Action Bar */}
-        <div className="border-t border-gray-200 dark:border-gray-800 pt-8 mb-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="border-t border-gray-200 dark:border-gray-800 pt-8 mb-16 flex flex-wrap items-center justify-between gap-y-4 gap-x-2">
+          <div className="flex flex-wrap items-center gap-3">
             {article.allowLikes !== false && (
               <button 
                 onClick={handleLike}
@@ -223,7 +223,7 @@ export default function ArticleView() {
             )}
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <BookmarkButton articleId={article._id} className="!bg-gray-100 dark:!bg-gray-800" />
             {article.allowShares !== false && (
               <button 

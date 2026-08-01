@@ -29,6 +29,9 @@ import NewsletterPage from "@/pages/NewsletterPage";
 import RssFeed from "@/pages/RssFeed";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
+import AdminRoute from './components/auth/AdminRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -43,12 +46,15 @@ export default function App() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-        <div className="flex flex-col items-center gap-6">
-          <img src="/cs_insights.png" alt="CS Insights" className="w-24 h-24 rounded-2xl drop-shadow-2xl animate-pulse" />
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-brand-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-3 h-3 bg-accent-violet rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-3 h-3 bg-accent-cyan rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        <div className="relative flex flex-col items-center gap-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-brand-500 blur-3xl opacity-20 animate-pulse rounded-full"></div>
+            <img src="/cs_insights.png" alt="CS Insights" className="w-24 h-24 animate-pulse relative z-10 drop-shadow-xl" />
+          </div>
+          <div className="flex gap-2">
+            <div className="w-3 h-3 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-3 h-3 rounded-full bg-accent-violet animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-3 h-3 rounded-full bg-accent-cyan animate-bounce" style={{ animationDelay: '300ms' }}></div>
           </div>
         </div>
       </div>
@@ -57,6 +63,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-white">
+      <ScrollToTop />
       <Header />
       <main className="flex-1 flex flex-col relative z-0 pt-20">
         <Routes>
