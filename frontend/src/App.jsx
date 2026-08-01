@@ -29,8 +29,6 @@ import NewsletterPage from "@/pages/NewsletterPage";
 import RssFeed from "@/pages/RssFeed";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
-import AdminRoute from './components/auth/AdminRoute';
-import ProtectedRoute from './components/auth/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 
 export default function App() {
