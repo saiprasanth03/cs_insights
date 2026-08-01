@@ -11,7 +11,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full glass border-b border-gray-200/20 dark:border-gray-800/20 shadow-sm backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full glass border-b border-gray-200/20 dark:border-gray-800/20 shadow-sm backdrop-blur-xl">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         
         <div className="flex items-center gap-10">

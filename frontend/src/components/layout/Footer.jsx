@@ -9,7 +9,7 @@ export default function Footer() {
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           
-          <div className="col-span-1 md:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="col-span-1 md:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
             <Link to="/" className="flex items-center gap-2 mb-4 group">
               <img 
                 src="/cs_insights.png" 

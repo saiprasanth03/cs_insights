@@ -84,9 +84,9 @@ export default function Home() {
             </div>
             
             <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 dark:text-white mb-8 tracking-tight leading-tight">
-              Computer Science, <br />
+              Master Computer Science & <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-accent-violet to-accent-cyan animate-pulse-slow">
-                Explained Clearly.
+                System Design.
               </span>
             </h1>
             

@@ -34,7 +34,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-white">
       <Header />
-      <main className="flex-1 flex flex-col relative z-0">
+      <main className="flex-1 flex flex-col relative z-0 pt-20">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/articles" element={<Articles />} />
