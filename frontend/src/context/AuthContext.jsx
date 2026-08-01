@@ -4,9 +4,16 @@ import { useNavigate } from 'react-router-dom';
 
 export const AuthContext = createContext();
 
+const USER_CACHE_KEY = 'cs_insights_user';
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Load cached user instantly so buttons don't flicker as disabled on page load
+  const cachedUser = (() => {
+    try { return JSON.parse(localStorage.getItem(USER_CACHE_KEY)); } catch { return null; }
+  })();
+
+  const [user, setUser] = useState(cachedUser);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!cachedUser);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -17,11 +24,19 @@ export const AuthProvider = ({ children }) => {
         if (data && data.success) {
           setUser(data.data);
           setIsAuthenticated(true);
+          // Update cache with fresh data
+          localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data.data));
+        } else {
+          // Cookie expired or invalid - clear cache
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem(USER_CACHE_KEY);
         }
       } catch (error) {
-        // Not authenticated
+        // Not authenticated - clear cache
         setUser(null);
         setIsAuthenticated(false);
+        localStorage.removeItem(USER_CACHE_KEY);
       } finally {
         setLoading(false);
       }
@@ -33,9 +48,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await loginUser(credentials);
       if (data && data.success) {
-        // the backend handles cookie creation
         setUser(data.data);
         setIsAuthenticated(true);
+        localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data.data));
         return { success: true };
       }
       return { success: false, error: 'Login failed' };
@@ -48,9 +63,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await registerUser(userData);
       if (data && data.success) {
-        // the backend handles cookie creation
         setUser(data.data);
         setIsAuthenticated(true);
+        localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data.data));
         return { success: true };
       }
       return { success: false, error: 'Registration failed' };
@@ -62,11 +77,13 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await logoutUser();
-      setUser(null);
-      setIsAuthenticated(false);
-      navigate('/');
     } catch (error) {
       console.error('Logout error', error);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem(USER_CACHE_KEY);
+      navigate('/');
     }
   };
 
