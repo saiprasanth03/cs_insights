@@ -164,7 +164,7 @@ export default function ArticleView() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 overflow-x-hidden w-full">
       <Helmet>
         <title>{article.title} | CS Insights</title>
         <meta name="description" content={article.excerpt || "Read this article on CS Insights"} />
@@ -195,7 +195,7 @@ export default function ArticleView() {
 
 
 
-        <div className="prose prose-lg dark:prose-invert prose-brand max-w-none prose-img:rounded-xl prose-img:shadow-lg prose-headings:font-bold prose-a:text-brand-600 mb-16">
+        <div className="prose prose-lg dark:prose-invert prose-brand max-w-none prose-img:rounded-xl prose-img:shadow-lg prose-headings:font-bold prose-a:text-brand-600 mb-16 overflow-x-hidden break-words">
           <ReactMarkdown>
             {article.content ? article.content.replace(/#1'([^']+)'#/g, '# $1').replace(/#2'([^']+)'#/g, '## $1') : ''}
           </ReactMarkdown>

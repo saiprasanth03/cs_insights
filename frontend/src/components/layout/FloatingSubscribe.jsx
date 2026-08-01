@@ -37,7 +37,7 @@ export default function FloatingSubscribe() {
           isOpen ? 'scale-100 opacity-100' : 'scale-90 opacity-0 pointer-events-none'
         }`}
       >
-        <div className="w-80 glass bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-6 relative">
+        <div className="w-[calc(100vw-3rem)] sm:w-80 max-w-sm glass bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-6 relative">
           <button 
             onClick={() => setIsOpen(false)}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
