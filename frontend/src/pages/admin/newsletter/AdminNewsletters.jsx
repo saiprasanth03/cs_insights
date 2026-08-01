@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../../../api/axios'; // Direct API call for now
@@ -12,6 +12,25 @@ export default function AdminNewsletters() {
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '', previewUrl: '' });
+  const [campaigns, setCampaigns] = useState([]);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true);
+
+  const fetchCampaigns = async () => {
+    try {
+      const response = await api.get('/admin/newsletters');
+      if (response.data.success) {
+        setCampaigns(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch campaigns', error);
+    } finally {
+      setLoadingCampaigns(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,6 +49,7 @@ export default function AdminNewsletters() {
           previewUrl: response.data.previewUrl
         });
         setFormData({ subject: '', title: '', content: '', coverImage: '' });
+        fetchCampaigns();
       } else {
         setStatus({ type: 'error', message: 'Failed to send newsletter.' });
       }
@@ -134,6 +154,59 @@ export default function AdminNewsletters() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Campaign History */}
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">Campaign History</h2>
+        
+        {loadingCampaigns ? (
+          <div className="flex justify-center p-8">
+            <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : campaigns.length === 0 ? (
+          <div className="glass rounded-3xl p-8 text-center text-gray-500 dark:text-gray-400">
+            No campaigns sent yet.
+          </div>
+        ) : (
+          <div className="glass rounded-3xl overflow-hidden border border-gray-200/50 dark:border-gray-800/50">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200/50 dark:border-gray-700/50">
+                    <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Subject</th>
+                    <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Date Sent</th>
+                    <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Status</th>
+                    <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Recipients</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200/50 dark:divide-gray-700/50 bg-white/30 dark:bg-gray-900/30">
+                  {campaigns.map(camp => (
+                    <tr key={camp._id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-gray-900 dark:text-white truncate max-w-xs">{camp.subject}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(camp.sentAt || camp.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                          camp.status === 'SENT' ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400' :
+                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400'
+                        }`}>
+                          {camp.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-300">
+                        {camp.totalRecipients || (camp.metrics && camp.metrics.sent) || 0}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
