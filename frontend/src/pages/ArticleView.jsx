@@ -193,16 +193,7 @@ export default function ArticleView() {
           </p>
         </header>
 
-        {article.coverImage && (
-          <div className="w-full h-[400px] md:h-[500px] rounded-3xl overflow-hidden mb-12 shadow-2xl relative">
-            <img 
-              src={article.coverImage} 
-              alt={article.title} 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-3xl"></div>
-          </div>
-        )}
+
 
         <div className="prose prose-lg dark:prose-invert prose-brand max-w-none prose-img:rounded-xl prose-img:shadow-lg prose-headings:font-bold prose-a:text-brand-600 mb-16">
           <ReactMarkdown>
