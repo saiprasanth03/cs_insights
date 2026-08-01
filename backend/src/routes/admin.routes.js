@@ -43,4 +43,5 @@ router.route("/comments/:id/reply").post(import_comment.replyToComment);
 router.route("/subscribers").get(import_admin_newsletter.getSubscribers);
 router.route("/authors").get(import_admin_author.getAuthors).post(import_admin_author.createAuthor);
 router.route("/authors/:id").get(import_admin_author.getAuthor).put(import_admin_author.updateAuthor).delete(import_admin_author.deleteAuthor);
+router.route("/test-email").post(import_admin_newsletter.testEmail);
 var admin_routes_default = router;

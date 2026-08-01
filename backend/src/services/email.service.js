@@ -208,6 +208,47 @@ class EmailService {
       throw error;
     }
   }
+
+  async testEmailConnections(targetEmail) {
+    const results = { resend: { configured: false, status: 'N/A' }, brevo: { configured: false, status: 'N/A' } };
+    
+    // Test Resend
+    if (this.useResend && this.resend) {
+      results.resend.configured = true;
+      try {
+        await this.resend.emails.send({
+          from: process.env.FROM_EMAIL || 'CS Insights <onboarding@resend.dev>',
+          to: targetEmail,
+          subject: 'Test Email - Resend',
+          html: '<p>This is a test email sent from your Resend configuration in CS Insights.</p>',
+        });
+        results.resend.status = 'SUCCESS';
+      } catch (e) {
+        results.resend.status = 'FAILED: ' + e.message;
+      }
+    }
+
+    // Test Nodemailer (Brevo)
+    if (this.transporter) {
+      results.brevo.configured = true;
+      try {
+        let fromEmail = '"CS Insights Test" <support@csinsights.com>';
+        if (this.useBrevo) fromEmail = `"CS Insights Test" <${process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL}>`;
+        
+        await this.transporter.sendMail({
+          from: fromEmail,
+          to: targetEmail,
+          subject: 'Test Email - Brevo/Nodemailer',
+          html: '<p>This is a test email sent from your Brevo/SMTP configuration in CS Insights.</p>',
+        });
+        results.brevo.status = 'SUCCESS';
+      } catch (e) {
+        results.brevo.status = 'FAILED: ' + e.message;
+      }
+    }
+
+    return results;
+  }
 }
 
 module.exports = new EmailService();

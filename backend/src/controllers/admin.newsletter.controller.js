@@ -21,13 +21,22 @@ __export(admin_newsletter_controller_exports, {
   createCampaign: () => createCampaign,
   getCampaigns: () => getCampaigns,
   getSubscribers: () => getSubscribers,
-  unsubscribe: () => unsubscribe
+  unsubscribe: () => unsubscribe,
+  testEmail: () => testEmail
 });
 module.exports = __toCommonJS(admin_newsletter_controller_exports);
 var import_NewsletterCampaign = require("../models/NewsletterCampaign");
 var import_Subscriber = require("../models/Subscriber");
 var emailService = require("../services/email.service");
-
+  const testEmail = async (req, res) => {
+    try {
+      const email = req.body.email || req.user.email;
+      const results = await emailService.testEmailConnections(email);
+      res.status(200).json({ success: true, results });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
 const createCampaign = async (req, res) => {
   try {
     const htmlContent = emailService.transporter ? require('../services/templates/newsletter.template')(req.body) : '';
