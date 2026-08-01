@@ -68,8 +68,8 @@ const register = async (req, res) => {
     const token = (0, import_jwt.generateToken)({ userId: user._id, roles: user.roles });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1e3
       // 7 days
     });
@@ -106,8 +106,8 @@ const login = async (req, res) => {
     const token = (0, import_jwt.generateToken)({ userId: user._id, roles: user.roles });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1e3
     });
     res.status(200).json({
@@ -126,7 +126,9 @@ const login = async (req, res) => {
 const logout = (req, res) => {
   res.cookie("token", "none", {
     expires: new Date(Date.now() + 10 * 1e3),
-    httpOnly: true
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
   });
   res.status(200).json({ success: true, message: "Logged out successfully" });
 };
@@ -166,8 +168,8 @@ const googleLogin = async (req, res) => {
     const jwtToken = (0, import_jwt.generateToken)({ userId: user._id, roles: user.roles });
     res.cookie("token", jwtToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1e3
     });
     res.status(200).json({
