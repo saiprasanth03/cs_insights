@@ -1,14 +1,15 @@
 const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
+const https = require('https');
 const generateNewsletterHtml = require('./templates/newsletter.template');
 
 class EmailService {
   constructor() {
-    this.transporter = null; // Used for Gmail or Ethereal
+    this.transporter = null; // Used for Gmail fallback only
     this.resend = null; // Used if RESEND_API_KEY is available
     this.useResend = false;
     this.useGmail = false;
-    this.useBrevo = false;
+    this.useBrevo = false; // Now means Brevo HTTP API
     this.init();
   }
 
@@ -21,12 +22,16 @@ class EmailService {
         console.log('✅ Email Service initialized (Resend mode - up to 100/day)');
       }
 
-      // 2. Initialize Nodemailer (Brevo or Gmail)
-      if (process.env.BREVO_USER && process.env.BREVO_SMTP_KEY) {
+      // 2. Initialize Brevo HTTP API (works on all hosting providers including Render)
+      if (process.env.BREVO_API_KEY) {
+        this.useBrevo = true;
+        console.log('✅ Email Service initialized (Brevo API mode - up to 300/day)');
+      } else if (process.env.BREVO_USER && process.env.BREVO_SMTP_KEY) {
+        // Fallback to SMTP if only SMTP credentials are available (local dev only)
         this.transporter = nodemailer.createTransport({
           host: 'smtp-relay.brevo.com',
-          port: 465,
-          secure: true,
+          port: 587,
+          secure: false,
           connectionTimeout: 5000,
           greetingTimeout: 5000,
           auth: {
@@ -34,8 +39,8 @@ class EmailService {
             pass: process.env.BREVO_SMTP_KEY
           }
         });
-        this.useBrevo = true;
-        console.log('✅ Email Service initialized (Brevo SMTP mode - up to 300/day)');
+        this.useBrevo = false; // SMTP mode, tracked by transporter
+        console.log('✅ Email Service initialized (Brevo SMTP mode - local dev)');
       } else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
         this.transporter = nodemailer.createTransport({
           service: 'gmail',
@@ -49,24 +54,21 @@ class EmailService {
       }
 
       // 3. Fallback to Ethereal if nothing is configured
-      if (!this.useResend && !this.transporter) {
-        // Create a test account on Ethereal (Fake SMTP service)
+      if (!this.useResend && !this.useBrevo && !this.transporter) {
         let testAccount = await nodemailer.createTestAccount();
-
         this.transporter = nodemailer.createTransport({
           host: 'smtp.ethereal.email',
           port: 587,
-          secure: false, // true for 465, false for other ports
+          secure: false,
           connectionTimeout: 5000,
           greetingTimeout: 5000,
           auth: {
-            user: testAccount.user, // generated ethereal user
-            pass: testAccount.pass, // generated ethereal password
+            user: testAccount.user,
+            pass: testAccount.pass,
           },
         });
-        
         console.log('✅ Email Service initialized (Ethereal test mode)');
-        console.log('   Add RESEND_API_KEY to .env to send real emails via Resend!');
+        console.log('   Add RESEND_API_KEY or BREVO_API_KEY to .env to send real emails!');
       }
     } catch (error) {
       console.error('❌ Failed to initialize Email Service:', error);
@@ -74,10 +76,60 @@ class EmailService {
   }
 
   /**
+   * Send email via Brevo HTTP API (works on Render - no SMTP port needed)
+   */
+  async sendViaBrevoAPI({ to, subject, html, fromName, fromEmail }) {
+    const senderEmail = fromEmail || process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL;
+    const senderName = fromName || 'CS Insights';
+
+    const payload = JSON.stringify({
+      sender: { name: senderName, email: senderEmail },
+      to: Array.isArray(to) ? to.map(email => ({ email })) : [{ email: to }],
+      subject: subject,
+      htmlContent: html,
+    });
+
+    return new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.brevo.com',
+        path: '/v3/smtp/email',
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': process.env.BREVO_API_KEY,
+          'content-type': 'application/json',
+          'content-length': Buffer.byteLength(payload),
+        },
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(JSON.parse(data));
+          } else {
+            reject(new Error(`Brevo API error ${res.statusCode}: ${data}`));
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.setTimeout(10000, () => {
+        req.destroy();
+        reject(new Error('Brevo API request timed out'));
+      });
+
+      req.write(payload);
+      req.end();
+    });
+  }
+
+  /**
    * Send a newsletter campaign to a list of subscribers
    */
   async sendNewsletter(campaign, subscribers) {
-    if (!this.useResend && !this.transporter) {
+    if (!this.useResend && !this.useBrevo && !this.transporter) {
       console.log('⏳ Email Service not yet ready. Retrying...');
       await new Promise(r => setTimeout(r, 2000));
     }
@@ -87,7 +139,6 @@ class EmailService {
       return null;
     }
 
-    // Generate the gorgeous HTML matching the design
     const htmlContent = generateNewsletterHtml(campaign);
     const subject = campaign.subject || campaign.title;
 
@@ -100,54 +151,51 @@ class EmailService {
         const emails = resendBatch.map(s => s.email);
         
         const data = await this.resend.emails.send({
-          from: process.env.FROM_EMAIL || 'CS Insights <newsletter@resend.dev>',
+          from: process.env.FROM_EMAIL || 'CS Insights <onboarding@resend.dev>',
           to: emails[0] || process.env.ADMIN_EMAIL,
           bcc: emails.length > 1 ? emails.slice(1) : undefined,
           subject: subject,
           html: htmlContent,
         });
 
-        console.log('----------------------------------------------------');
-        console.log(`🚀 SENT ${resendBatch.length} EMAILS VIA RESEND!`);
-        console.log('Message ID: %s', data.id);
+        console.log(`✅ SENT ${resendBatch.length} EMAILS VIA RESEND! ID: ${data.id}`);
       }
 
-      // 2. Send remaining via Brevo/Gmail if available and there are still subscribers left
-      if (remainingSubscribers.length > 0) {
-        if (this.transporter) {
-          // If we have more than 300 left, Brevo might reject it, but we'll try to send the batch
-          const emails = remainingSubscribers.map(s => s.email).join(', ');
-          
-          let fromEmail = '"CS Insights 💻" <newsletter@csinsights.com>';
-          if (this.useBrevo) fromEmail = `"CS Insights" <${process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL}>`;
-          else if (this.useGmail) fromEmail = `"CS Insights" <${process.env.GMAIL_USER}>`;
-          
-          let toEmail = 'subscribers@csinsights.com';
-          if (this.useBrevo) toEmail = process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL;
-          else if (this.useGmail) toEmail = process.env.GMAIL_USER;
-          
-          let info = await this.transporter.sendMail({
-            from: fromEmail,
-            to: toEmail,
-            bcc: emails,
-            subject: subject,
-            html: htmlContent,
-          });
+      // 2. Send remaining via Brevo HTTP API
+      if (remainingSubscribers.length > 0 && this.useBrevo) {
+        const emails = remainingSubscribers.map(s => s.email);
+        await this.sendViaBrevoAPI({
+          to: emails,
+          subject,
+          html: htmlContent,
+          fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL,
+        });
+        console.log(`✅ SENT ${remainingSubscribers.length} EMAILS VIA BREVO API!`);
+        remainingSubscribers = [];
+      }
 
-          console.log(`🚀 SENT ${remainingSubscribers.length} EMAILS VIA ${this.useBrevo ? 'BREVO' : (this.useGmail ? 'GMAIL' : 'ETHEREAL')}!`);
-          console.log('Message ID: %s', info.messageId);
-          console.log('----------------------------------------------------');
-          
-          if (!this.useBrevo && !this.useGmail) {
-             const previewUrl = nodemailer.getTestMessageUrl(info);
-             console.log('👀 VIEW EMAIL PREVIEW: %s', previewUrl);
-             return previewUrl;
-          }
-        } else {
-          console.log(`⚠️ WARNING: ${remainingSubscribers.length} subscribers were skipped because no secondary email provider (Brevo/Gmail) is configured to handle the overflow from Resend!`);
+      // 3. Fallback to SMTP transporter (Gmail or Brevo SMTP)
+      if (remainingSubscribers.length > 0 && this.transporter) {
+        const emails = remainingSubscribers.map(s => s.email).join(', ');
+        let fromEmail = `"CS Insights" <${process.env.GMAIL_USER || 'newsletter@csinsights.com'}>`;
+        
+        let info = await this.transporter.sendMail({
+          from: fromEmail,
+          to: fromEmail,
+          bcc: emails,
+          subject,
+          html: htmlContent,
+        });
+
+        console.log(`✅ SENT via SMTP! Message ID: ${info.messageId}`);
+        
+        if (!this.useGmail) {
+          const previewUrl = nodemailer.getTestMessageUrl(info);
+          console.log('📧 PREVIEW: %s', previewUrl);
+          return previewUrl;
         }
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error sending newsletter:', error);
@@ -156,20 +204,15 @@ class EmailService {
   }
 
   async sendPasswordResetEmail(email, resetUrl) {
-    if (!this.useResend && !this.transporter) {
-      console.log('Email Service not yet ready. Retrying...');
-      await new Promise(r => setTimeout(r, 2000));
-    }
-
     const subject = 'Password Reset Request - CS Insights';
     const htmlContent = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Reset Your Password</h2>
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #6366f1;">Reset Your Password</h2>
         <p>You requested a password reset. Click the button below to choose a new password.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
         </div>
-        <p>If you did not request a password reset, please ignore this email or contact support if you have questions.</p>
+        <p>If you did not request a password reset, please ignore this email.</p>
         <p>This link will expire in 1 hour.</p>
       </div>
     `;
@@ -179,32 +222,28 @@ class EmailService {
         const data = await this.resend.emails.send({
           from: process.env.FROM_EMAIL || 'CS Insights <support@resend.dev>',
           to: email,
-          subject: subject,
+          subject,
           html: htmlContent,
         });
         console.log(`Password reset email sent to ${email} via Resend`);
         return data;
       }
 
-      if (this.transporter) {
-        let fromEmail = '"CS Insights" <support@csinsights.com>';
-        if (this.useBrevo) fromEmail = `"CS Insights" <${process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL}>`;
-        else if (this.useGmail) fromEmail = `"CS Insights" <${process.env.GMAIL_USER}>`;
-
-        let info = await this.transporter.sendMail({
-          from: fromEmail,
+      if (this.useBrevo) {
+        const data = await this.sendViaBrevoAPI({
           to: email,
-          subject: subject,
+          subject,
           html: htmlContent,
+          fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL,
         });
+        console.log(`Password reset email sent to ${email} via Brevo API`);
+        return data;
+      }
 
-        console.log(`Password reset email sent to ${email} via Nodemailer`);
-        
-        if (!this.useBrevo && !this.useGmail) {
-          const previewUrl = nodemailer.getTestMessageUrl(info);
-          console.log('VIEW EMAIL PREVIEW: %s', previewUrl);
-          return previewUrl;
-        }
+      if (this.transporter) {
+        let fromEmail = `"CS Insights" <${process.env.GMAIL_USER || 'support@csinsights.com'}>`;
+        let info = await this.transporter.sendMail({ from: fromEmail, to: email, subject, html: htmlContent });
+        console.log(`Password reset email sent to ${email} via SMTP`);
         return info;
       }
     } catch (error) {
@@ -223,8 +262,8 @@ class EmailService {
         await this.resend.emails.send({
           from: process.env.FROM_EMAIL || 'CS Insights <onboarding@resend.dev>',
           to: targetEmail,
-          subject: 'Test Email - Resend',
-          html: '<p>This is a test email sent from your Resend configuration in CS Insights.</p>',
+          subject: 'Test Email - CS Insights (Resend)',
+          html: '<p>✅ This test email confirms Resend is configured correctly in CS Insights.</p>',
         });
         results.resend.status = 'SUCCESS';
       } catch (e) {
@@ -232,18 +271,30 @@ class EmailService {
       }
     }
 
-    // Test Nodemailer (Brevo)
-    if (this.transporter) {
+    // Test Brevo HTTP API
+    if (this.useBrevo) {
       results.brevo.configured = true;
       try {
-        let fromEmail = '"CS Insights Test" <support@csinsights.com>';
-        if (this.useBrevo) fromEmail = `"CS Insights Test" <${process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL}>`;
-        
+        await this.sendViaBrevoAPI({
+          to: targetEmail,
+          subject: 'Test Email - CS Insights (Brevo)',
+          html: '<p>✅ This test email confirms Brevo API is configured correctly in CS Insights.</p>',
+          fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL,
+        });
+        results.brevo.status = 'SUCCESS';
+      } catch (e) {
+        results.brevo.status = 'FAILED: ' + e.message;
+      }
+    } else if (this.transporter) {
+      // SMTP fallback test
+      results.brevo.configured = true;
+      try {
+        let fromEmail = `"CS Insights Test" <${process.env.GMAIL_USER || 'support@csinsights.com'}>`;
         await this.transporter.sendMail({
           from: fromEmail,
           to: targetEmail,
           subject: 'Test Email - Brevo/Nodemailer',
-          html: '<p>This is a test email sent from your Brevo/SMTP configuration in CS Insights.</p>',
+          html: '<p>This is a test email from SMTP configuration.</p>',
         });
         results.brevo.status = 'SUCCESS';
       } catch (e) {
