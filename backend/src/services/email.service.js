@@ -25,8 +25,8 @@ class EmailService {
       if (process.env.BREVO_USER && process.env.BREVO_SMTP_KEY) {
         this.transporter = nodemailer.createTransport({
           host: 'smtp-relay.brevo.com',
-          port: 587,
-          secure: false,
+          port: 465,
+          secure: true,
           connectionTimeout: 5000,
           greetingTimeout: 5000,
           auth: {
