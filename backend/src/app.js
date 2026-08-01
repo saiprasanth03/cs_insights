@@ -46,13 +46,30 @@ var import_author = __toESM(require("./routes/author.routes"));
 var import_upload = require("./routes/upload.routes");
 var import_path = require("path");
 const app = (0, import_express.default)();
-app.use((0, import_helmet.default)({
-  crossOriginResourcePolicy: false,
-}));
-app.use((0, import_cors.default)({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
-}));
+  app.use((0, import_helmet.default)({
+    crossOriginResourcePolicy: false,
+  }));
+  
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://cs-insights.vercel.app",
+    "https://cs-insights-frontend.vercel.app"
+  ];
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
+  
+  app.use((0, import_cors.default)({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.startsWith(o))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true
+  }));
 const limiter = (0, import_express_rate_limit.default)({
   windowMs: 15 * 60 * 1e3,
   // 15 minutes
