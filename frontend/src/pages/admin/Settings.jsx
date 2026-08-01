@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Users, ShieldCheck, Mail, AlertCircle, CheckCircle2, Send } from "lucide-react";
-import api from '../../../api/axios';
+import api from '../../api/axios';
 import { promoteToAdmin } from '../../api/admin';
 
 export default function AdminSettings() {
