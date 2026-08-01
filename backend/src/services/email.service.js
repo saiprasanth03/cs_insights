@@ -27,6 +27,8 @@ class EmailService {
           host: 'smtp-relay.brevo.com',
           port: 587,
           secure: false,
+          connectionTimeout: 5000,
+          greetingTimeout: 5000,
           auth: {
             user: process.env.BREVO_USER,
             pass: process.env.BREVO_SMTP_KEY
@@ -55,6 +57,8 @@ class EmailService {
           host: 'smtp.ethereal.email',
           port: 587,
           secure: false, // true for 465, false for other ports
+          connectionTimeout: 5000,
+          greetingTimeout: 5000,
           auth: {
             user: testAccount.user, // generated ethereal user
             pass: testAccount.pass, // generated ethereal password
