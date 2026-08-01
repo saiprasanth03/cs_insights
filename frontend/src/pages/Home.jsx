@@ -54,14 +54,6 @@ export default function Home() {
     fetchTopics();
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const query = e.target.elements.search.value;
-    if (query) {
-      navigate(`/articles?q=${query}`);
-    }
-  };
-
   return (
     <div className="min-h-screen">
       <Helmet>
@@ -102,10 +94,10 @@ export default function Home() {
               Master complex topics with high-quality articles, visual diagrams, and code examples. Built for developers who want to dive deeper.
             </p>
             
-            <form onSubmit={handleSearch} className="w-full max-w-2xl flex flex-col sm:flex-row items-center gap-4 relative">
+            <div className="w-full max-w-2xl flex flex-col sm:flex-row items-center gap-4 relative">
               <div className="absolute -inset-4 bg-brand-500/20 blur-xl rounded-full opacity-50" />
               <div className="flex-1 w-full relative">
-                 <SearchBar name="search" placeholder="Search algorithms, data structures..." className="w-full" />
+                 <SearchBar placeholder="Search algorithms, data structures..." className="w-full" />
               </div>
               <Link 
                 to="/articles" 
@@ -116,7 +108,7 @@ export default function Home() {
                   Browse <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </Link>
-            </form>
+            </div>
             
           </div>
         </div>
