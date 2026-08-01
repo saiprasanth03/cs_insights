@@ -1,7 +1,8 @@
 const { marked } = require('marked');
 
 module.exports = function generateNewsletterHtml(campaign) {
-  const { subject, title, author = 'CODSTAK', date = new Date(), content, coverImage } = campaign;
+  const { subject, title, author = 'CS Insights', date = new Date(), content, coverImage, slug } = campaign;
+  const FRONTEND_URL = process.env.FRONTEND_URL || 'https://cs-insights-frontend.vercel.app';
   
   const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date)).toUpperCase();
 
@@ -162,7 +163,7 @@ module.exports = function generateNewsletterHtml(campaign) {
           <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280;">⟳</a>
         </td>
         <td align="right">
-          <a href="#" style="display: inline-block; padding: 8px 16px; border: 1px solid #e5e7eb; border-radius: 20px; font-size: 12px; font-weight: 600; color: #6b7280; text-decoration: none; letter-spacing: 0.5px;">
+          <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="display: inline-block; padding: 8px 16px; border: 1px solid #e5e7eb; border-radius: 20px; font-size: 12px; font-weight: 600; color: #6b7280; text-decoration: none; letter-spacing: 0.5px;">
             READ IN APP ↗
           </a>
         </td>
@@ -179,7 +180,7 @@ module.exports = function generateNewsletterHtml(campaign) {
       <div style="font-size: 24px; font-weight: 900; color: #d1d5db; letter-spacing: -1px; margin-bottom: 20px;">CS INSIGHTS</div>
       <p style="font-size: 12px; color: #9ca3af; font-family: -apple-system, sans-serif;">
         You're receiving this because you subscribed to our newsletter.<br/>
-        <a href="http://localhost:3000/unsubscribe" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a>
+        <a href="${FRONTEND_URL}/unsubscribe" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a>
       </p>
     </div>
 

@@ -59,6 +59,7 @@ const createArticle = async (req, res) => {
           {
             subject: article.title,
             title: article.title,
+            slug: article.slug,
             content: article.content,
             coverImage: article.coverImage,
             author: req.user?.name || 'CS Insights'

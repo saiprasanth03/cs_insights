@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Edit2, Trash2, AlertCircle, FileText, CheckCircle, Clock } from 'lucide-react';
 import { getAdminArticles, deleteAdminArticle } from '../../../api/admin';
+import { toast } from 'react-hot-toast';
 
 export default function AdminArticles() {
   const [articles, setArticles] = useState([]);
@@ -28,17 +29,17 @@ export default function AdminArticles() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this article?')) {
-      try {
-        const response = await deleteAdminArticle(id);
-        if (response.success) {
-          fetchArticles();
-        } else {
-          alert('Failed to delete article.');
-        }
-      } catch (err) {
-        alert('An error occurred while deleting the article.');
+    if (!window.confirm('Are you sure you want to delete this article?')) return;
+    try {
+      const response = await deleteAdminArticle(id);
+      if (response.success) {
+        toast.success('Article deleted successfully!');
+        setArticles(prev => prev.filter(a => a._id !== id));
+      } else {
+        toast.error(response.message || 'Failed to delete article.');
       }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'An error occurred while deleting.');
     }
   };
 
