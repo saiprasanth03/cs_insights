@@ -145,7 +145,25 @@ class EmailService {
     try {
       let remainingSubscribers = [...subscribers];
 
-      // 1. Send up to 100 via Resend if available
+      // 1. Prefer Brevo HTTP API for all subscribers (no Resend free-tier restrictions)
+      if (this.useBrevo && remainingSubscribers.length > 0) {
+        // Send in batches of 50 to stay within Brevo limits
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < remainingSubscribers.length; i += BATCH_SIZE) {
+          const batch = remainingSubscribers.slice(i, i + BATCH_SIZE);
+          const emails = batch.map(s => s.email);
+          await this.sendViaBrevoAPI({
+            to: emails,
+            subject,
+            html: htmlContent,
+            fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL,
+          });
+          console.log(`✅ SENT batch ${Math.floor(i/BATCH_SIZE)+1} (${batch.length} emails) VIA BREVO API!`);
+        }
+        remainingSubscribers = [];
+      }
+
+      // 2. Use Resend for remaining subscribers (overflow or if Brevo not configured)
       if (this.useResend && remainingSubscribers.length > 0) {
         const resendBatch = remainingSubscribers.splice(0, 100);
         const emails = resendBatch.map(s => s.email);
@@ -159,19 +177,6 @@ class EmailService {
         });
 
         console.log(`✅ SENT ${resendBatch.length} EMAILS VIA RESEND! ID: ${data.id}`);
-      }
-
-      // 2. Send remaining via Brevo HTTP API
-      if (remainingSubscribers.length > 0 && this.useBrevo) {
-        const emails = remainingSubscribers.map(s => s.email);
-        await this.sendViaBrevoAPI({
-          to: emails,
-          subject,
-          html: htmlContent,
-          fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL,
-        });
-        console.log(`✅ SENT ${remainingSubscribers.length} EMAILS VIA BREVO API!`);
-        remainingSubscribers = [];
       }
 
       // 3. Fallback to SMTP transporter (Gmail or Brevo SMTP)

@@ -47,7 +47,7 @@ export default function App() {
         <div className="relative flex flex-col items-center gap-8">
           <div className="relative">
             <div className="absolute inset-0 bg-brand-500 blur-3xl opacity-20 animate-pulse rounded-full"></div>
-            <img src="/cs_insights.png" alt="CS Insights" className="w-24 h-24 animate-pulse relative z-10 drop-shadow-xl" />
+            <img src="/cs_insights.png" alt="CS Insights" className="w-24 h-24 rounded-2xl relative z-10 drop-shadow-xl" />
           </div>
           <div className="flex gap-2">
             <div className="w-3 h-3 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
