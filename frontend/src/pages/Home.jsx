@@ -116,7 +116,7 @@ export default function Home() {
       </section>
 
       {featuredArticles.length > 0 && (
-        <section className="py-24 bg-gray-50 dark:bg-transparent z-10 relative">
+        <section className="py-24 bg-gray-50 dark:bg-transparent z-20 relative">
           <div className="container mx-auto px-4 max-w-7xl">
             <div className="flex items-end justify-between mb-16">
               <div>
@@ -164,7 +164,7 @@ export default function Home() {
         </section>
       )}
 
-      <section className="py-24 bg-white dark:bg-transparent z-10 relative">
+      <section className="py-24 bg-white dark:bg-transparent z-20 relative">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col items-center text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">

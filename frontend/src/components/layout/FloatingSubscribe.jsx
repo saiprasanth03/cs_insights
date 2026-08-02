@@ -30,11 +30,11 @@ export default function FloatingSubscribe() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
       {/* Expanded Form */}
       <div 
         className={`mb-4 overflow-hidden transition-all duration-300 ease-in-out transform origin-bottom-right ${
-          isOpen ? 'scale-100 opacity-100' : 'scale-90 opacity-0 pointer-events-none'
+          isOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-90 opacity-0 pointer-events-none'
         }`}
       >
         <div className="w-[calc(100vw-3rem)] sm:w-80 max-w-sm glass bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-6 relative">
@@ -87,7 +87,7 @@ export default function FloatingSubscribe() {
       {/* Floating Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`group flex items-center justify-center w-14 h-14 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 ${
+        className={`group flex items-center justify-center w-14 h-14 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 pointer-events-auto ${
           isOpen ? 'rotate-90 bg-gray-800 from-gray-800 to-gray-700' : ''
         }`}
       >
