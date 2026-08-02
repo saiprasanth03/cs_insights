@@ -16,9 +16,24 @@ module.exports = function generateNewsletterHtml(campaign) {
       .replace(/#2'([^']+)'#/g, '## $1');
 
     htmlContent = marked(preProcessedContent);
-    // Convert code blocks into clean <pre> tags with white-space: pre !important to render diagrams exactly as posted
+    // Convert code blocks into responsive <pre> tags that scale font size dynamically based on diagram width to fit inside the card box
     htmlContent = htmlContent.replace(/<pre><code(?: class="[^"]*")?>([\s\S]*?)<\/code><\/pre>/gi, (match, codeContent) => {
-      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 20px; border: 1px solid #27272a; text-align: left;"><pre style="margin: 0; padding: 0; background: transparent; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace !important; font-size: 12px; line-height: 1.4; color: #f4f4f5; white-space: pre !important; word-break: normal !important; word-wrap: normal !important; -webkit-text-size-adjust: 100%; text-align: left; display: block;">${codeContent}</pre></div>`;
+      const lines = codeContent.split('\n');
+      const maxLen = Math.max(...lines.map(l => l.length));
+      
+      let fontSize = '11.5px';
+      let letterSpacing = '0px';
+      if (maxLen > 65) {
+        fontSize = '8px';
+        letterSpacing = '-0.3px';
+      } else if (maxLen > 48) {
+        fontSize = '9.5px';
+        letterSpacing = '-0.1px';
+      } else if (maxLen > 38) {
+        fontSize = '10.5px';
+      }
+
+      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 16px; border: 1px solid #27272a; text-align: left;"><pre style="margin: 0; padding: 0; background: transparent; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace !important; font-size: ${fontSize}; letter-spacing: ${letterSpacing}; line-height: 1.35; color: #f4f4f5; white-space: pre !important; word-break: normal !important; word-wrap: normal !important; -webkit-text-size-adjust: 100%; text-align: left; display: block;">${codeContent}</pre></div>`;
     });
   }
 

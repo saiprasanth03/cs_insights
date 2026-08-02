@@ -199,12 +199,10 @@ export default function ArticleView() {
           <ReactMarkdown
             components={{
               pre: ({ children, ...props }) => (
-                <div className="my-6 w-full overflow-x-auto rounded-xl bg-gray-900 dark:bg-black/80 p-4 border border-gray-800 shadow-inner text-center">
-                  <div className="table text-left mx-auto max-w-full">
-                    <pre className="font-mono text-sm leading-relaxed text-gray-100 min-w-max whitespace-pre text-left" {...props}>
-                      {children}
-                    </pre>
-                  </div>
+                <div className="my-6 w-full overflow-x-auto rounded-xl bg-gray-900 dark:bg-black/80 p-3 sm:p-4 border border-gray-800 shadow-inner">
+                  <pre className="font-mono text-[10px] xs:text-xs sm:text-sm leading-relaxed text-gray-100 whitespace-pre text-left max-w-full" {...props}>
+                    {children}
+                  </pre>
                 </div>
               ),
               code: ({ node, inline, className, children, ...props }) => {
