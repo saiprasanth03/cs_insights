@@ -3,7 +3,7 @@ const { marked } = require('marked');
 module.exports = function generateNewsletterHtml(campaign) {
   const { subject, title, author = 'CS Insights', date = new Date(), content, coverImage, slug } = campaign;
   const FRONTEND_URL = process.env.FRONTEND_URL || 'https://cs-insights-frontend.vercel.app';
-  
+  const targetUrl = slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL;
   const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date)).toUpperCase();
 
   // Convert markdown to HTML using marked
@@ -13,8 +13,6 @@ module.exports = function generateNewsletterHtml(campaign) {
     const preProcessedContent = content
       .replace(/#1'([^']+)'#/g, '# $1')
       .replace(/#2'([^']+)'#/g, '## $1');
-      
-    const targetUrl = slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL;
 
     htmlContent = marked(preProcessedContent);
     // Convert code blocks into line-by-line nowrap divs inside a horizontal scroll container for bulletproof diagram rendering across all mobile email clients
