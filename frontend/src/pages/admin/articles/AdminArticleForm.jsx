@@ -55,6 +55,15 @@ export default function AdminArticleForm() {
         }
       }
 
+      // Sort categories so valid topics (starting with letters) appear first
+      catData.sort((a, b) => {
+        const aClean = /^[a-zA-Z]/.test(a.name || '');
+        const bClean = /^[a-zA-Z]/.test(b.name || '');
+        if (aClean && !bClean) return -1;
+        if (!aClean && bClean) return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
       setCategories(catData);
 
       if (isEditing) {
@@ -77,11 +86,15 @@ export default function AdminArticleForm() {
         } else {
           toast.error('Failed to load article.');
         }
-      } else if (catData.length > 0) {
-        setFormData(prev => ({
-          ...prev,
-          category: prev.category || catData[0]._id
-        }));
+      } else {
+        // For new articles, default to the first clean topic if available
+        const defaultCat = catData.find(c => /^[a-zA-Z]/.test(c.name || '')) || catData[0];
+        if (defaultCat) {
+          setFormData(prev => ({
+            ...prev,
+            category: prev.category || defaultCat._id
+          }));
+        }
       }
     } catch (err) {
       toast.error('An error occurred while fetching data.');
