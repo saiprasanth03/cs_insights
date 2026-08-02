@@ -15,10 +15,11 @@ module.exports = function generateNewsletterHtml(campaign) {
       .replace(/#2'([^']+)'#/g, '## $1');
       
     htmlContent = marked(preProcessedContent);
-    // Add inline styling to pre and code tags for perfect ASCII diagram rendering across all email clients
+    // Add inline styling & overflow wrapper to pre/code tags for perfect ASCII diagram rendering across all mobile email clients
     htmlContent = htmlContent
-      .replace(/<pre>/g, '<pre style="background-color: #18181b; color: #f4f4f5; font-family: \'Courier New\', Courier, monospace; font-size: 11px; line-height: 1.25; padding: 14px; border-radius: 10px; margin: 20px 0; overflow-x: auto; white-space: pre; word-break: normal; -webkit-text-size-adjust: none;">')
-      .replace(/<code>/g, '<code style="font-family: \'Courier New\', Courier, monospace; font-size: 11px; white-space: pre; word-break: normal;">');
+      .replace(/<pre>/g, '<div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 20px 0; background-color: #18181b; border-radius: 10px; border: 1px solid #27272a;"><pre style="background-color: #18181b; color: #f4f4f5; font-family: \'Courier New\', Courier, monospace; font-size: 9px; line-height: 1.15; letter-spacing: -0.3px; padding: 12px; margin: 0; white-space: pre !important; word-break: normal !important; word-wrap: normal !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">')
+      .replace(/<\/pre>/g, '</pre></div>')
+      .replace(/<code>/g, '<code style="font-family: \'Courier New\', Courier, monospace; font-size: 9px; white-space: pre !important; word-break: normal !important;">');
   }
 
   return `
