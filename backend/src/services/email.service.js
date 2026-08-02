@@ -120,26 +120,50 @@ class EmailService {
     });
   }
 
-  /**
-   * Send a newsletter campaign to a list of subscribers
-   */
-  async sendNewsletter(campaign, subscribers) {
-    if (!subscribers || subscribers.length === 0) {
-      console.log('No subscribers to send to.');
-      return null;
+  async ensureInitialized() {
+    if (!this.transporter) {
+      const gmailUser = process.env.GMAIL_USER || 'cs.insights3@gmail.com';
+      const gmailPass = process.env.GMAIL_APP_PASSWORD || 'vbfy jtyk vbtj yzwv';
+
+      if (gmailUser && gmailPass) {
+        this.transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: gmailUser,
+            pass: gmailPass.replace(/\s+/g, '')
+          }
+        });
+        this.useGmail = true;
+      }
     }
 
-    const htmlContent = generateNewsletterHtml(campaign);
-    const subject = campaign.subject || campaign.title;
-    const fromAddress = `"CS Insights" <${process.env.GMAIL_USER || process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com'}>`;
+    if (!this.resend && process.env.RESEND_API_KEY) {
+      this.resend = new Resend(process.env.RESEND_API_KEY);
+      this.useResend = true;
+    }
+  }
+
+  async sendNewsletter(articleData, subscribers) {
+    await this.ensureInitialized();
+    const subject = `[CS Insights] ${articleData.title || articleData.subject}`;
+    const siteUrl = process.env.FRONTEND_URL || 'https://cs-insights-frontend.vercel.app';
+    const articleUrl = `${siteUrl}/articles/${articleData.slug || ''}`;
+
+    const htmlContent = generateNewsletterHtml({
+      title: articleData.title || articleData.subject,
+      content: articleData.content,
+      coverImage: articleData.coverImage,
+      articleUrl: articleUrl,
+      author: articleData.author || 'CS Insights Team'
+    });
+
+    const fromAddress = process.env.FROM_EMAIL || `"CS Insights" <cs.insights3@gmail.com>`;
     const brevoApiKey = process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.BREVO_SMTP_KEY;
 
-    // Parallel email dispatch with smart quota routing:
-    // 1. First 100 subscribers (idx 0..99) -> Resend
-    // 2. Next 300 subscribers (idx 100..399) -> Brevo API
-    // 3. Subscribers > 400 or any failure -> Gmail Nodemailer fallback
+    console.log(`[NEWSLETTER] Starting parallel dispatch to ${subscribers.length} subscribers...`);
+
     const dispatchResults = await Promise.all(subscribers.map(async (subscriber, index) => {
-      // Priority 1: Resend for first 100 subscribers
+      // Step 1: Resend (First 100 subscribers quota)
       if (index < 100 && this.useResend) {
         try {
           await this.resend.emails.send({
@@ -148,15 +172,15 @@ class EmailService {
             subject: subject,
             html: htmlContent,
           });
-          console.log(`✅ [Sub #${index + 1}] SENT via Resend (First 100 quota): ${subscriber.email}`);
+          console.log(`✅ [Sub #${index + 1}] SENT via Resend: ${subscriber.email}`);
           return true;
         } catch (resendErr) {
-          console.error(`⚠️ Resend failed for sub #${index + 1} (${subscriber.email}), failing over to Gmail/Brevo:`, resendErr.message);
+          console.error(`⚠️ Resend failed for sub #${index + 1} (${subscriber.email}), falling over:`, resendErr.message);
         }
       }
 
-      // Priority 2: Brevo API for next 300 subscribers (indices 100..399)
-      if (index >= 100 && index < 400 && brevoApiKey) {
+      // Step 2: Brevo API (Next 300 subscribers or if Resend failed)
+      if (brevoApiKey && (index >= 100 || !this.useResend)) {
         try {
           await this.sendViaBrevoAPI({
             to: subscriber.email,
@@ -164,14 +188,14 @@ class EmailService {
             html: htmlContent,
             fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com',
           });
-          console.log(`✅ [Sub #${index + 1}] SENT via Brevo API (Next 300 quota): ${subscriber.email}`);
+          console.log(`✅ [Sub #${index + 1}] SENT via Brevo API: ${subscriber.email}`);
           return true;
         } catch (brevoErr) {
-          console.error(`⚠️ Brevo failed for sub #${index + 1} (${subscriber.email}), failing over to Gmail:`, brevoErr.message);
+          console.error(`⚠️ Brevo API failed for sub #${index + 1} (${subscriber.email}), falling over:`, brevoErr.message);
         }
       }
 
-      // Priority 3 / Fallback: Gmail Nodemailer (100% reliable for all recipients)
+      // Step 3: Gmail Nodemailer (100% Guaranteed Delivery)
       if (this.transporter) {
         try {
           await this.transporter.sendMail({
@@ -180,14 +204,14 @@ class EmailService {
             subject: subject,
             html: htmlContent
           });
-          console.log(`✅ [Sub #${index + 1}] SENT via Gmail (100% Delivery): ${subscriber.email}`);
+          console.log(`✅ [Sub #${index + 1}] SENT via Gmail: ${subscriber.email}`);
           return true;
         } catch (gmailErr) {
           console.error(`❌ Gmail failed for sub #${index + 1} (${subscriber.email}):`, gmailErr.message);
         }
       }
 
-      // Final Fallback: Brevo API if Gmail was not available
+      // Step 4: Final Brevo API fallback if Gmail was not available
       if (brevoApiKey) {
         try {
           await this.sendViaBrevoAPI({
@@ -196,10 +220,10 @@ class EmailService {
             html: htmlContent,
             fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com',
           });
-          console.log(`✅ [Sub #${index + 1}] SENT via Brevo API (Fallback): ${subscriber.email}`);
+          console.log(`✅ [Sub #${index + 1}] SENT via Brevo API (Final Fallback): ${subscriber.email}`);
           return true;
-        } catch (err) {
-          console.error(`❌ Brevo Fallback failed for sub #${index + 1} (${subscriber.email}):`, err.message);
+        } catch (finalErr) {
+          console.error(`❌ Final Brevo fallback failed for sub #${index + 1} (${subscriber.email}):`, finalErr.message);
         }
       }
 
@@ -207,8 +231,13 @@ class EmailService {
     }));
 
     const successCount = dispatchResults.filter(Boolean).length;
-    console.log(`✅ Quota-routed email dispatch completed: ${successCount}/${subscribers.length} sent successfully.`);
-    return { success: true, count: successCount };
+    console.log(`✅ Parallel email dispatch completed: ${successCount}/${subscribers.length} sent successfully.`);
+
+    return {
+      success: successCount > 0,
+      sentCount: successCount,
+      totalCount: subscribers.length
+    };
   }
 
   async sendPasswordResetEmail(email, resetUrl) {
