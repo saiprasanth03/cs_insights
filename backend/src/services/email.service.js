@@ -133,11 +133,13 @@ class EmailService {
     const subject = campaign.subject || campaign.title;
     const fromAddress = `"CS Insights" <${process.env.GMAIL_USER || process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com'}>`;
 
+    let remainingSubscribers = [...subscribers];
     let successCount = 0;
 
-    // 1. Send via Gmail Nodemailer (100% private individual sending per subscriber)
-    if (this.transporter) {
-      for (const subscriber of subscribers) {
+    // 1. Try Gmail Nodemailer first (100% private individual sending per subscriber)
+    if (this.transporter && remainingSubscribers.length > 0) {
+      const unsent = [];
+      for (const subscriber of remainingSubscribers) {
         try {
           await this.transporter.sendMail({
             from: fromAddress,
@@ -149,14 +151,17 @@ class EmailService {
           successCount++;
         } catch (err) {
           console.error(`❌ Failed to send to ${subscriber.email} via Gmail:`, err.message);
+          unsent.push(subscriber);
         }
       }
-      return { success: true, count: successCount };
+      remainingSubscribers = unsent;
     }
 
-    // 2. Send via Brevo API (individual private sending per subscriber)
-    if (this.useBrevo) {
-      for (const subscriber of subscribers) {
+    // 2. Fallback to Brevo API for any unsent subscribers
+    const brevoApiKey = process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.BREVO_SMTP_KEY;
+    if (brevoApiKey && remainingSubscribers.length > 0) {
+      const unsent = [];
+      for (const subscriber of remainingSubscribers) {
         try {
           await this.sendViaBrevoAPI({
             to: subscriber.email,
@@ -168,14 +173,15 @@ class EmailService {
           successCount++;
         } catch (err) {
           console.error(`❌ Brevo API failed for ${subscriber.email}:`, err.message);
+          unsent.push(subscriber);
         }
       }
-      return { success: true, count: successCount };
+      remainingSubscribers = unsent;
     }
 
-    // 3. Send via Resend (individual private sending per subscriber)
-    if (this.useResend) {
-      for (const subscriber of subscribers) {
+    // 3. Fallback to Resend for any remaining subscribers
+    if (this.useResend && remainingSubscribers.length > 0) {
+      for (const subscriber of remainingSubscribers) {
         try {
           await this.resend.emails.send({
             from: process.env.FROM_EMAIL || 'CS Insights <onboarding@resend.dev>',
@@ -189,10 +195,9 @@ class EmailService {
           console.error(`❌ Resend failed for ${subscriber.email}:`, err.message);
         }
       }
-      return { success: true, count: successCount };
     }
 
-    return null;
+    return { success: true, count: successCount };
   }
 
   async sendPasswordResetEmail(email, resetUrl) {
