@@ -40,44 +40,42 @@ const createArticle = async (req, res) => {
       author: articleData.author || authorId
     });
 
-    res.status(201).json({ success: true, data: article });
-
     // Asynchronously dispatch newsletter in background so HTTP response is instant (< 200ms)
     const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
     if (isSendNewsletter && article.status === 'PUBLISHED') {
-      setImmediate(async () => {
-        try {
-          import_NewsletterCampaign.NewsletterCampaign.create({
-            subject: article.title,
-            title: article.title,
-            contentHtml: article.content,
-            contentPlain: article.excerpt || article.title,
-            status: "SENT",
-            type: "ARTICLE",
-            createdBy: authorId,
-            sentAt: new Date()
-          }).catch(console.error);
+      try {
+        import_NewsletterCampaign.NewsletterCampaign.create({
+          subject: article.title,
+          title: article.title,
+          contentHtml: article.content,
+          contentPlain: article.excerpt || article.title,
+          status: "SENT",
+          type: "ARTICLE",
+          createdBy: authorId,
+          sentAt: new Date()
+        }).catch(console.error);
 
-          const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
-          console.log(`[NEWSLETTER] Asynchronously sending article "${article.title}" to ${subscribers.length} active subscribers.`);
-          if (subscribers && subscribers.length > 0) {
-            await emailService.sendNewsletter(
-              {
-                subject: article.title,
-                title: article.title,
-                slug: article.slug,
-                content: article.content,
-                coverImage: article.coverImage,
-                author: req.user?.name || 'CS Insights'
-              },
-              subscribers
-            );
-          }
-        } catch (err) {
-          console.error('Background newsletter error in createArticle:', err);
+        const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+        console.log(`[NEWSLETTER] Awaiting parallel newsletter send of "${article.title}" to ${subscribers.length} active subscribers.`);
+        if (subscribers && subscribers.length > 0) {
+          await emailService.sendNewsletter(
+            {
+              subject: article.title,
+              title: article.title,
+              slug: article.slug,
+              content: article.content,
+              coverImage: article.coverImage,
+              author: req.user?.name || 'CS Insights'
+            },
+            subscribers
+          );
         }
-      });
+      } catch (err) {
+        console.error('Newsletter error in createArticle:', err);
+      }
     }
+
+    res.status(201).json({ success: true, data: article });
   } catch (error) {
     let message = error.message;
     if (error.code === 11000) {
@@ -123,43 +121,38 @@ const updateArticle = async (req, res) => {
       return;
     }
 
-    res.status(200).json({ success: true, data: article });
-
-    // Asynchronously dispatch newsletter in background so HTTP response is instant (< 200ms)
     const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
     if (isSendNewsletter && article.status === 'PUBLISHED') {
-      setImmediate(async () => {
-        try {
-          import_NewsletterCampaign.NewsletterCampaign.create({
-            subject: article.title,
-            title: article.title,
-            contentHtml: article.content,
-            contentPlain: article.excerpt || article.title,
-            status: "SENT",
-            type: "ARTICLE",
-            createdBy: authorId,
-            sentAt: new Date()
-          }).catch(console.error);
+      try {
+        import_NewsletterCampaign.NewsletterCampaign.create({
+          subject: article.title,
+          title: article.title,
+          contentHtml: article.content,
+          contentPlain: article.excerpt || article.title,
+          status: "SENT",
+          type: "ARTICLE",
+          createdBy: authorId,
+          sentAt: new Date()
+        }).catch(console.error);
 
-          const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
-          console.log(`[NEWSLETTER] Asynchronously sending article update "${article.title}" to ${subscribers.length} active subscribers.`);
-          if (subscribers && subscribers.length > 0) {
-            await emailService.sendNewsletter(
-              {
-                subject: article.title,
-                title: article.title,
-                slug: article.slug,
-                content: article.content,
-                coverImage: article.coverImage,
-                author: req.user?.name || 'CS Insights'
-              },
-              subscribers
-            );
-          }
-        } catch (err) {
-          console.error('Background newsletter error in updateArticle:', err);
+        const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+        console.log(`[NEWSLETTER] Awaiting parallel newsletter update send of "${article.title}" to ${subscribers.length} active subscribers.`);
+        if (subscribers && subscribers.length > 0) {
+          await emailService.sendNewsletter(
+            {
+              subject: article.title,
+              title: article.title,
+              slug: article.slug,
+              content: article.content,
+              coverImage: article.coverImage,
+              author: req.user?.name || 'CS Insights'
+            },
+            subscribers
+          );
         }
-      });
+      } catch (err) {
+        console.error('Newsletter error in updateArticle:', err);
+      }
     }
 
     res.status(200).json({ success: true, data: article });
