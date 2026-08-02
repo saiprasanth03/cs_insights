@@ -21,10 +21,10 @@ module.exports = function generateNewsletterHtml(campaign) {
     htmlContent = htmlContent.replace(/<pre><code(?: class="[^"]*")?>([\s\S]*?)<\/code><\/pre>/gi, (match, codeContent) => {
       const lines = codeContent.split('\n');
       const formattedLines = lines.map(line => 
-        `<div style="white-space: nowrap !important; word-break: normal !important; word-wrap: normal !important; font-family: 'Courier New', Courier, monospace; font-size: 9.5px; line-height: 1.2; letter-spacing: -0.2px; -webkit-text-size-adjust: 100%; color: #f4f4f5;">${line || '&nbsp;'}</div>`
+        `<div style="white-space: nowrap !important; word-break: normal !important; word-wrap: normal !important; font-family: 'Courier New', Courier, monospace; font-size: 9.5px; line-height: 1.25; letter-spacing: -0.2px; -webkit-text-size-adjust: 100%; color: #f4f4f5;">${line || '&nbsp;'}</div>`
       ).join('');
 
-      return `<div style="width: 100%; max-width: 560px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 20px 0; background-color: #18181b; border-radius: 10px; padding: 14px; border: 1px solid #27272a; font-family: 'Courier New', Courier, monospace;">${formattedLines}</div>`;
+      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 16px; border: 1px solid #27272a; text-align: left;">${formattedLines}</div>`;
     });
   }
 
@@ -100,7 +100,7 @@ module.exports = function generateNewsletterHtml(campaign) {
       .content-body h1 { font-size: 26px !important; word-break: break-word; }
       .content-body h2 { font-size: 22px !important; word-break: break-word; }
       .content-body h3 { font-size: 18px !important; word-break: break-word; }
-      .email-title { font-size: 28px !important; word-break: break-word !important; }
+      .email-title { font-size: 26px !important; word-break: break-word !important; }
     }
   </style>
 </head>
@@ -108,27 +108,31 @@ module.exports = function generateNewsletterHtml(campaign) {
   
   <div style="max-width: 600px; margin: 0 auto; padding: 20px 20px 60px 20px;">
     
-    <!-- Top Subscribe Banner -->
-    <div style="text-align: right; padding: 10px 0; font-size: 13px; color: #6b7280; font-family: -apple-system, sans-serif;">
-      Forwarded this email? <a href="${FRONTEND_URL}" style="color: #111827; text-decoration: underline;">Subscribe here</a> for more
-    </div>
-
-    <!-- Title -->
-    <h1 class="email-title" style="font-size: 34px; font-weight: 800; color: #111827; line-height: 1.2; margin: 30px 0 20px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; letter-spacing: -0.5px; word-break: break-word;">
-      <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="color: #111827; text-decoration: none;">${title || subject}</a>
-    </h1>
-
-    <!-- Logo & Author/Date Row -->
-    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px; border-bottom: 1px solid #f3f4f6; padding-bottom: 20px;">
+    <!-- Header Row: Website Logo (Top-Left) & Forwarded Banner (Top-Right) -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
       <tr>
         <td align="left" valign="middle">
-          <a href="${FRONTEND_URL}" style="text-decoration: none;">
-            <div style="font-size: 28px; font-weight: 900; color: #000000; letter-spacing: -2px;">CS</div>
+          <a href="${FRONTEND_URL}" style="text-decoration: none; display: inline-block;">
+            <img src="${FRONTEND_URL}/cs_insights.png" alt="CS Insights Logo" style="height: 42px; width: auto; border-radius: 10px; display: block;" />
           </a>
         </td>
-        <td align="right" valign="middle">
-          <div style="font-size: 12px; font-weight: 700; color: #4b5563; margin-bottom: 4px; letter-spacing: 0.5px;">${author}</div>
-          <div style="font-size: 12px; font-weight: 600; color: #9ca3af; letter-spacing: 0.5px;">${formattedDate}</div>
+        <td align="right" valign="middle" style="font-size: 12px; color: #6b7280; font-family: -apple-system, sans-serif;">
+          Forwarded this email? <a href="${FRONTEND_URL}" style="color: #111827; text-decoration: underline;">Subscribe here</a>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Main Section: Title on Left, Author & Date on Right -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; border-bottom: 1px solid #f3f4f6; padding-bottom: 20px;">
+      <tr>
+        <td align="left" valign="bottom" style="padding-right: 12px;">
+          <h1 class="email-title" style="font-size: 32px; font-weight: 800; color: #111827; line-height: 1.2; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; letter-spacing: -0.5px; word-break: break-word;">
+            <a href="${targetUrl}" style="color: #111827; text-decoration: none;">${title || subject}</a>
+          </h1>
+        </td>
+        <td align="right" valign="bottom" style="white-space: nowrap;">
+          <div style="font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 4px; letter-spacing: 0.3px;">${author}</div>
+          <div style="font-size: 12px; font-weight: 600; color: #9ca3af; letter-spacing: 0.3px;">${formattedDate}</div>
         </td>
       </tr>
     </table>

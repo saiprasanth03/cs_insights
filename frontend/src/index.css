@@ -116,3 +116,19 @@ body {
 .card-hover {
   @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)];
 }
+
+/* Ensure code blocks & ASCII diagrams scroll horizontally on mobile without breaking lines */
+.prose pre {
+  overflow-x: auto !important;
+  max-width: 100% !important;
+  white-space: pre !important;
+  word-break: normal !important;
+  word-wrap: normal !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose pre code {
+  white-space: pre !important;
+  word-break: normal !important;
+  word-wrap: normal !important;
+}
