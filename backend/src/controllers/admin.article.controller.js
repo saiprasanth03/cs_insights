@@ -40,42 +40,47 @@ const createArticle = async (req, res) => {
       author: articleData.author || authorId
     });
 
-    // Asynchronously dispatch newsletter in background so HTTP response is instant (< 200ms)
+    // Respond immediately — publishing is instant (<200ms)
+    res.status(201).json({ success: true, data: article });
+
+    // Fire newsletter as a live floating Promise AFTER responding.
+    // This is NOT setImmediate — it is an active Promise that keeps
+    // the Node.js event loop alive on Render until emails are sent.
     const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
     if (isSendNewsletter && article.status === 'PUBLISHED') {
-      try {
-        import_NewsletterCampaign.NewsletterCampaign.create({
-          subject: article.title,
-          title: article.title,
-          contentHtml: article.content,
-          contentPlain: article.excerpt || article.title,
-          status: "SENT",
-          type: "ARTICLE",
-          createdBy: authorId,
-          sentAt: new Date()
-        }).catch(console.error);
+      Promise.resolve().then(async () => {
+        try {
+          import_NewsletterCampaign.NewsletterCampaign.create({
+            subject: article.title,
+            title: article.title,
+            contentHtml: article.content,
+            contentPlain: article.excerpt || article.title,
+            status: "SENT",
+            type: "ARTICLE",
+            createdBy: authorId,
+            sentAt: new Date()
+          }).catch(console.error);
 
-        const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
-        console.log(`[NEWSLETTER] Awaiting parallel newsletter send of "${article.title}" to ${subscribers.length} active subscribers.`);
-        if (subscribers && subscribers.length > 0) {
-          await emailService.sendNewsletter(
-            {
-              subject: article.title,
-              title: article.title,
-              slug: article.slug,
-              content: article.content,
-              coverImage: article.coverImage,
-              author: req.user?.name || 'CS Insights'
-            },
-            subscribers
-          );
+          const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+          console.log(`[NEWSLETTER] Dispatching "${article.title}" to ${subscribers.length} subscribers in background...`);
+          if (subscribers && subscribers.length > 0) {
+            await emailService.sendNewsletter(
+              {
+                subject: article.title,
+                title: article.title,
+                slug: article.slug,
+                content: article.content,
+                coverImage: article.coverImage,
+                author: req.user?.name || 'CS Insights'
+              },
+              subscribers
+            );
+          }
+        } catch (err) {
+          console.error('[NEWSLETTER] Background dispatch error in createArticle:', err);
         }
-      } catch (err) {
-        console.error('Newsletter error in createArticle:', err);
-      }
+      });
     }
-
-    res.status(201).json({ success: true, data: article });
   } catch (error) {
     let message = error.message;
     if (error.code === 11000) {
@@ -121,41 +126,45 @@ const updateArticle = async (req, res) => {
       return;
     }
 
+    // Respond immediately — update is instant (<200ms)
+    res.status(200).json({ success: true, data: article });
+
+    // Fire newsletter as a live floating Promise AFTER responding.
     const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
     if (isSendNewsletter && article.status === 'PUBLISHED') {
-      try {
-        import_NewsletterCampaign.NewsletterCampaign.create({
-          subject: article.title,
-          title: article.title,
-          contentHtml: article.content,
-          contentPlain: article.excerpt || article.title,
-          status: "SENT",
-          type: "ARTICLE",
-          createdBy: authorId,
-          sentAt: new Date()
-        }).catch(console.error);
+      Promise.resolve().then(async () => {
+        try {
+          import_NewsletterCampaign.NewsletterCampaign.create({
+            subject: article.title,
+            title: article.title,
+            contentHtml: article.content,
+            contentPlain: article.excerpt || article.title,
+            status: "SENT",
+            type: "ARTICLE",
+            createdBy: authorId,
+            sentAt: new Date()
+          }).catch(console.error);
 
-        const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
-        console.log(`[NEWSLETTER] Awaiting parallel newsletter update send of "${article.title}" to ${subscribers.length} active subscribers.`);
-        if (subscribers && subscribers.length > 0) {
-          await emailService.sendNewsletter(
-            {
-              subject: article.title,
-              title: article.title,
-              slug: article.slug,
-              content: article.content,
-              coverImage: article.coverImage,
-              author: req.user?.name || 'CS Insights'
-            },
-            subscribers
-          );
+          const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+          console.log(`[NEWSLETTER] Dispatching update "${article.title}" to ${subscribers.length} subscribers in background...`);
+          if (subscribers && subscribers.length > 0) {
+            await emailService.sendNewsletter(
+              {
+                subject: article.title,
+                title: article.title,
+                slug: article.slug,
+                content: article.content,
+                coverImage: article.coverImage,
+                author: req.user?.name || 'CS Insights'
+              },
+              subscribers
+            );
+          }
+        } catch (err) {
+          console.error('[NEWSLETTER] Background dispatch error in updateArticle:', err);
         }
-      } catch (err) {
-        console.error('Newsletter error in updateArticle:', err);
-      }
+      });
     }
-
-    res.status(200).json({ success: true, data: article });
   } catch (error) {
     let message = error.message;
     if (error.code === 11000) {
