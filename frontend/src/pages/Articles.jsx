@@ -93,12 +93,6 @@ export default function ArticlesPage() {
                 <div className="absolute top-4 right-4 z-40">
                   <BookmarkButton articleId={article._id} />
                 </div>
-
-                <div className="absolute bottom-4 left-4 z-20 flex gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full glass bg-white/10 text-white text-xs font-medium backdrop-blur-md">
-                    <Tag className="w-3 h-3" /> {article.category?.name || 'Programming'}
-                  </span>
-                </div>
               </div>
               
               <div className="p-8 flex flex-col flex-1 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
