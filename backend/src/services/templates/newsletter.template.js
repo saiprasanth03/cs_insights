@@ -19,10 +19,10 @@ module.exports = function generateNewsletterHtml(campaign) {
     htmlContent = htmlContent.replace(/<pre><code(?: class="[^"]*")?>([\s\S]*?)<\/code><\/pre>/gi, (match, codeContent) => {
       const lines = codeContent.split('\n');
       const formattedLines = lines.map(line => 
-        `<div style="white-space: nowrap !important; word-break: normal !important; word-wrap: normal !important; font-family: 'Courier New', Courier, monospace; font-size: 9.5px; line-height: 1.25; letter-spacing: -0.2px; -webkit-text-size-adjust: 100%; color: #f4f4f5;">${line || '&nbsp;'}</div>`
+        `<div style="white-space: nowrap !important; word-break: normal !important; word-wrap: normal !important; font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.35; letter-spacing: 0px; -webkit-text-size-adjust: 100%; color: #f4f4f5;">${line || '&nbsp;'}</div>`
       ).join('');
 
-      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 16px; border: 1px solid #27272a; text-align: left;">${formattedLines}</div>`;
+      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 20px; border: 1px solid #27272a; text-align: left;"><div style="display: inline-block; text-align: left; min-width: 100%;">${formattedLines}</div></div>`;
     });
   }
 
@@ -111,7 +111,7 @@ module.exports = function generateNewsletterHtml(campaign) {
       <tr>
         <td align="left" valign="middle">
           <a href="${FRONTEND_URL}" style="text-decoration: none; display: inline-block;">
-            <img src="${FRONTEND_URL}/cs_insights.png" alt="CS Insights Logo" style="height: 42px; width: auto; border-radius: 10px; display: block;" />
+            <img src="${FRONTEND_URL}/cs_insights.png" width="42" height="42" alt="CS Insights" style="display: block; width: 42px; height: 42px; max-width: 42px; max-height: 42px; border-radius: 10px; border: 0; outline: none; text-decoration: none;" />
           </a>
         </td>
         <td align="right" valign="middle" style="font-size: 12px; color: #6b7280; font-family: -apple-system, sans-serif;">

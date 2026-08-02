@@ -195,8 +195,28 @@ export default function ArticleView() {
 
 
 
-        <div className="prose prose-lg dark:prose-invert prose-brand max-w-none prose-img:rounded-xl prose-img:shadow-lg prose-headings:font-bold prose-a:text-brand-600 mb-16 break-words">
-          <ReactMarkdown>
+        <div className="prose prose-lg dark:prose-invert prose-brand max-w-none prose-img:rounded-xl prose-img:shadow-lg prose-headings:font-bold prose-a:text-brand-600 mb-16">
+          <ReactMarkdown
+            components={{
+              pre: ({ children, ...props }) => (
+                <div className="my-6 w-full overflow-x-auto rounded-xl bg-gray-900 dark:bg-black/80 p-4 border border-gray-800 shadow-inner">
+                  <pre className="font-mono text-sm leading-relaxed text-gray-100 min-w-max whitespace-pre" {...props}>
+                    {children}
+                  </pre>
+                </div>
+              ),
+              code: ({ node, inline, className, children, ...props }) => {
+                if (inline) {
+                  return (
+                    <code className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-brand-600 dark:text-brand-400 font-mono text-sm" {...props}>
+                      {children}
+                    </code>
+                  );
+                }
+                return <code className="font-mono text-sm whitespace-pre min-w-max block" {...props}>{children}</code>;
+              }
+            }}
+          >
             {article.content ? article.content.replace(/#1'([^']+)'#/g, '# $1').replace(/#2'([^']+)'#/g, '## $1') : ''}
           </ReactMarkdown>
         </div>
