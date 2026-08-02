@@ -40,9 +40,9 @@ const createArticle = async (req, res) => {
       author: articleData.author || authorId
     });
 
-    // If the flag was checked and article is published, send it out as a newsletter
-    if (sendNewsletter && article.status === 'PUBLISHED') {
-      const campaign = await import_NewsletterCampaign.NewsletterCampaign.create({
+    const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
+    if (isSendNewsletter && article.status === 'PUBLISHED') {
+      import_NewsletterCampaign.NewsletterCampaign.create({
         subject: article.title,
         title: article.title,
         contentHtml: article.content,
@@ -51,11 +51,10 @@ const createArticle = async (req, res) => {
         type: "ARTICLE",
         createdBy: authorId,
         sentAt: new Date()
-      });
+      }).catch(console.error);
 
-      // Send asynchronously without blocking the response
       import_Subscriber.Subscriber.find({ status: 'ACTIVE' }).then(subscribers => {
-        console.log(`[NEWSLETTER] Found ${subscribers.length} active subscribers to send article to.`);
+        console.log(`[NEWSLETTER] Sending article "${article.title}" to ${subscribers.length} subscribers.`);
         emailService.sendNewsletter(
           {
             subject: article.title,
@@ -107,11 +106,44 @@ const getArticle = async (req, res) => {
 
 const updateArticle = async (req, res) => {
   try {
-    const article = await import_Article.Article.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { sendNewsletter, ...updateData } = req.body;
+    const authorId = req.user?.userId || req.user?._id || req.user?.id;
+
+    const article = await import_Article.Article.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!article) {
       res.status(404).json({ success: false, message: "Article not found" });
       return;
     }
+
+    const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
+    if (isSendNewsletter && article.status === 'PUBLISHED') {
+      import_NewsletterCampaign.NewsletterCampaign.create({
+        subject: article.title,
+        title: article.title,
+        contentHtml: article.content,
+        contentPlain: article.excerpt || article.title,
+        status: "SENT",
+        type: "ARTICLE",
+        createdBy: authorId,
+        sentAt: new Date()
+      }).catch(console.error);
+
+      import_Subscriber.Subscriber.find({ status: 'ACTIVE' }).then(subscribers => {
+        console.log(`[NEWSLETTER] Sending article update "${article.title}" to ${subscribers.length} subscribers.`);
+        emailService.sendNewsletter(
+          {
+            subject: article.title,
+            title: article.title,
+            slug: article.slug,
+            content: article.content,
+            coverImage: article.coverImage,
+            author: req.user?.name || 'CS Insights'
+          },
+          subscribers
+        ).catch(console.error);
+      });
+    }
+
     res.status(200).json({ success: true, data: article });
   } catch (error) {
     let message = error.message;

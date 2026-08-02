@@ -19,7 +19,7 @@ export default function AdminArticleForm() {
     coverImage: '',
     category: '',
     status: 'DRAFT',
-    sendNewsletter: false,
+    sendNewsletter: true,
     allowLikes: true,
     allowComments: true,
     allowShares: true
@@ -319,20 +319,18 @@ export default function AdminArticleForm() {
                   <option value="ARCHIVED">Archived</option>
                 </select>
 
-                {!isEditing && (
-                  <div className="mb-6 flex items-center gap-3 p-3 bg-brand-50 dark:bg-brand-900/10 rounded-xl border border-brand-100 dark:border-brand-800/30">
-                    <input 
-                      type="checkbox" 
-                      id="sendNewsletter"
-                      checked={formData.sendNewsletter}
-                      onChange={(e) => setFormData({...formData, sendNewsletter: e.target.checked})}
-                      className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 cursor-pointer"
-                    />
-                    <label htmlFor="sendNewsletter" className="text-sm font-medium text-brand-900 dark:text-brand-300 cursor-pointer select-none">
-                      Email to all subscribers
-                    </label>
-                  </div>
-                )}
+                <div className="mb-6 flex items-center gap-3 p-3 bg-brand-50 dark:bg-brand-900/10 rounded-xl border border-brand-100 dark:border-brand-800/30">
+                  <input 
+                    type="checkbox" 
+                    id="sendNewsletter"
+                    checked={formData.sendNewsletter}
+                    onChange={(e) => setFormData({...formData, sendNewsletter: e.target.checked})}
+                    className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 cursor-pointer"
+                  />
+                  <label htmlFor="sendNewsletter" className="text-sm font-medium text-brand-900 dark:text-brand-300 cursor-pointer select-none">
+                    Email to all subscribers
+                  </label>
+                </div>
               </div>
 
               <div className="mb-4">
