@@ -348,13 +348,25 @@ export default function AdminArticleForm() {
                 </div>
               </div>
 
-              <button 
-                type="submit" 
-                disabled={saving}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:-translate-y-0"
-              >
-                {saving ? 'Saving...' : <><Save className="w-4 h-4" /> Save Article</>}
-              </button>
+              <div className="flex flex-col gap-3">
+                <button 
+                  type="button"
+                  onClick={(e) => handleSubmit(e, 'PUBLISHED')}
+                  disabled={saving}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:-translate-y-0"
+                >
+                  {saving ? 'Publishing...' : <><Save className="w-4 h-4" /> Publish Article</>}
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={(e) => handleSubmit(e, 'DRAFT')}
+                  disabled={saving}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-all disabled:opacity-70"
+                >
+                  {saving ? 'Saving...' : 'Save as Draft'}
+                </button>
+              </div>
             </div>
           </div>
 

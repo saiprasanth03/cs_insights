@@ -33,10 +33,11 @@ const emailService = require("../services/email.service");
 const createArticle = async (req, res) => {
   try {
     const { sendNewsletter, ...articleData } = req.body;
+    const authorId = req.user?.userId || req.user?._id || req.user?.id;
     
     const article = await import_Article.Article.create({
       ...articleData,
-      author: req.user?.userId
+      author: articleData.author || authorId
     });
 
     // If the flag was checked and article is published, send it out as a newsletter
@@ -44,11 +45,11 @@ const createArticle = async (req, res) => {
       const campaign = await import_NewsletterCampaign.NewsletterCampaign.create({
         subject: article.title,
         title: article.title,
-        contentHtml: article.content, // Fallback, normally we rely on template
+        contentHtml: article.content,
         contentPlain: article.excerpt || article.title,
         status: "SENT",
         type: "ARTICLE",
-        createdBy: req.user?.userId,
+        createdBy: authorId,
         sentAt: new Date()
       });
 
@@ -76,7 +77,7 @@ const createArticle = async (req, res) => {
 };
 const getArticles = async (req, res) => {
   try {
-    const articles = await import_Article.Article.find().populate("category", "name slug").populate("author", "name email");
+    const articles = await import_Article.Article.find().sort({ createdAt: -1 }).populate("category", "name slug").populate("author", "name email");
     res.status(200).json({ success: true, count: articles.length, data: articles });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -114,7 +115,8 @@ const updateArticle = async (req, res) => {
 };
 const deleteArticle = async (req, res) => {
   try {
-    const article = await import_Article.Article.findByIdAndDelete(req.params.id);
+    const articleId = (req.params.id || '').trim();
+    const article = await import_Article.Article.findByIdAndDelete(articleId);
     if (!article) {
       res.status(404).json({ success: false, message: "Article not found" });
       return;

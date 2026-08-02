@@ -15,6 +15,10 @@ module.exports = function generateNewsletterHtml(campaign) {
       .replace(/#2'([^']+)'#/g, '## $1');
       
     htmlContent = marked(preProcessedContent);
+    // Add inline styling to pre and code tags for perfect ASCII diagram rendering across all email clients
+    htmlContent = htmlContent
+      .replace(/<pre>/g, '<pre style="background-color: #18181b; color: #f4f4f5; font-family: \'Courier New\', Courier, monospace; font-size: 11px; line-height: 1.25; padding: 14px; border-radius: 10px; margin: 20px 0; overflow-x: auto; white-space: pre; word-break: normal; -webkit-text-size-adjust: none;">')
+      .replace(/<code>/g, '<code style="font-family: \'Courier New\', Courier, monospace; font-size: 11px; white-space: pre; word-break: normal;">');
   }
 
   return `
@@ -53,23 +57,24 @@ module.exports = function generateNewsletterHtml(campaign) {
     .content-body pre {
       border: 1px solid #e5e7eb; 
       border-radius: 12px; 
-      padding: 24px; 
+      padding: 16px; 
       margin: 24px 0; 
-      background-color: #fafafa; 
-      font-size: 14px; 
-      line-height: 1.6; 
-      color: #374151;
+      background-color: #18181b; 
+      color: #f4f4f5;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px; 
+      line-height: 1.25; 
+      white-space: pre;
+      word-break: normal;
       overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
       -webkit-overflow-scrolling: touch;
       max-width: 100%;
     }
     .content-body code {
-      background-color: #f3f4f6;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 14px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      white-space: pre;
+      word-break: normal;
     }
     .content-body pre code {
       background-color: transparent;
@@ -116,8 +121,8 @@ module.exports = function generateNewsletterHtml(campaign) {
       .content-body h3 { font-size: 18px !important; word-break: break-word; }
       .content-body pre { 
         padding: 10px !important; 
-        font-size: 8px !important; 
-        line-height: 1.1 !important;
+        font-size: 10px !important; 
+        line-height: 1.2 !important;
         white-space: pre !important; 
         overflow-x: auto !important;
       }
@@ -131,7 +136,7 @@ module.exports = function generateNewsletterHtml(campaign) {
     
     <!-- Top Subscribe Banner -->
     <div style="text-align: right; padding: 10px 0; font-size: 13px; color: #6b7280; font-family: -apple-system, sans-serif;">
-      Forwarded this email? <a href="#" style="color: #111827; text-decoration: underline;">Subscribe here</a> for more
+      Forwarded this email? <a href="${FRONTEND_URL}" style="color: #111827; text-decoration: underline;">Subscribe here</a> for more
     </div>
 
     <!-- Title -->
@@ -159,8 +164,7 @@ module.exports = function generateNewsletterHtml(campaign) {
           <!-- Icons -->
           <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280; margin-right: 8px;">♡</a>
           <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280; margin-right: 8px;">💬</a>
-          <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280; margin-right: 8px;">⎋</a>
-          <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280;">⟳</a>
+          <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280;">⎋</a>
         </td>
         <td align="right">
           <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="display: inline-block; padding: 8px 16px; border: 1px solid #e5e7eb; border-radius: 20px; font-size: 12px; font-weight: 600; color: #6b7280; text-decoration: none; letter-spacing: 0.5px;">
