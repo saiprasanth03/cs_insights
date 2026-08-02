@@ -3,6 +3,7 @@ const { marked } = require('marked');
 module.exports = function generateNewsletterHtml(campaign) {
   const { subject, title, author = 'CS Insights', date = new Date(), content, coverImage, slug } = campaign;
   const FRONTEND_URL = process.env.FRONTEND_URL || 'https://cs-insights-frontend.vercel.app';
+  const logoUrl = `https://raw.githubusercontent.com/saiprasanth03/cs_insights/main/frontend/public/cs_insights.png`;
   const targetUrl = slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL;
   const formattedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date)).toUpperCase();
 
@@ -111,7 +112,7 @@ module.exports = function generateNewsletterHtml(campaign) {
       <tr>
         <td align="left" valign="middle">
           <a href="${FRONTEND_URL}" style="text-decoration: none; display: inline-block;">
-            <img src="${FRONTEND_URL}/cs_insights.png" width="42" height="42" alt="CS Insights" style="display: block; width: 42px; height: 42px; max-width: 42px; max-height: 42px; border-radius: 10px; border: 0; outline: none; text-decoration: none;" />
+            <img src="${logoUrl}" width="42" height="42" alt="CS Insights" style="display: block; width: 42px; height: 42px; max-width: 42px; max-height: 42px; border-radius: 10px; border: 0; outline: none; text-decoration: none;" />
           </a>
         </td>
         <td align="right" valign="middle" style="font-size: 12px; color: #6b7280; font-family: -apple-system, sans-serif;">
