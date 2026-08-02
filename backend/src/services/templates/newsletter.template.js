@@ -14,12 +14,18 @@ module.exports = function generateNewsletterHtml(campaign) {
       .replace(/#1'([^']+)'#/g, '# $1')
       .replace(/#2'([^']+)'#/g, '## $1');
       
+    const targetUrl = slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL;
+
     htmlContent = marked(preProcessedContent);
-    // Add inline styling & overflow wrapper to pre/code tags for perfect ASCII diagram rendering across all mobile email clients
-    htmlContent = htmlContent
-      .replace(/<pre>/g, '<div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 20px 0; background-color: #18181b; border-radius: 10px; border: 1px solid #27272a;"><pre style="background-color: #18181b; color: #f4f4f5; font-family: \'Courier New\', Courier, monospace; font-size: 9px; line-height: 1.15; letter-spacing: -0.3px; padding: 12px; margin: 0; white-space: pre !important; word-break: normal !important; word-wrap: normal !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">')
-      .replace(/<\/pre>/g, '</pre></div>')
-      .replace(/<code>/g, '<code style="font-family: \'Courier New\', Courier, monospace; font-size: 9px; white-space: pre !important; word-break: normal !important;">');
+    // Convert code blocks into line-by-line nowrap divs inside a horizontal scroll container for bulletproof diagram rendering across all mobile email clients
+    htmlContent = htmlContent.replace(/<pre><code(?: class="[^"]*")?>([\s\S]*?)<\/code><\/pre>/gi, (match, codeContent) => {
+      const lines = codeContent.split('\n');
+      const formattedLines = lines.map(line => 
+        `<div style="white-space: nowrap !important; word-break: normal !important; word-wrap: normal !important; font-family: 'Courier New', Courier, monospace; font-size: 9.5px; line-height: 1.2; letter-spacing: -0.2px; -webkit-text-size-adjust: 100%; color: #f4f4f5;">${line || '&nbsp;'}</div>`
+      ).join('');
+
+      return `<div style="width: 100%; max-width: 560px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 20px 0; background-color: #18181b; border-radius: 10px; padding: 14px; border: 1px solid #27272a; font-family: 'Courier New', Courier, monospace;">${formattedLines}</div>`;
+    });
   }
 
   return `
@@ -55,32 +61,6 @@ module.exports = function generateNewsletterHtml(campaign) {
     .content-body h1 { font-size: 32px; font-weight: 800; }
     .content-body h2 { font-size: 28px; font-weight: 800; }
     .content-body h3 { font-size: 24px; font-weight: 700; }
-    .content-body pre {
-      border: 1px solid #e5e7eb; 
-      border-radius: 12px; 
-      padding: 16px; 
-      margin: 24px 0; 
-      background-color: #18181b; 
-      color: #f4f4f5;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 11px; 
-      line-height: 1.25; 
-      white-space: pre;
-      word-break: normal;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      max-width: 100%;
-    }
-    .content-body code {
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 11px;
-      white-space: pre;
-      word-break: normal;
-    }
-    .content-body pre code {
-      background-color: transparent;
-      padding: 0;
-    }
     .content-body blockquote {
       border-left: 4px solid #6366f1; 
       padding-left: 16px; 
@@ -120,13 +100,6 @@ module.exports = function generateNewsletterHtml(campaign) {
       .content-body h1 { font-size: 26px !important; word-break: break-word; }
       .content-body h2 { font-size: 22px !important; word-break: break-word; }
       .content-body h3 { font-size: 18px !important; word-break: break-word; }
-      .content-body pre { 
-        padding: 10px !important; 
-        font-size: 10px !important; 
-        line-height: 1.2 !important;
-        white-space: pre !important; 
-        overflow-x: auto !important;
-      }
       .email-title { font-size: 28px !important; word-break: break-word !important; }
     }
   </style>
@@ -142,7 +115,7 @@ module.exports = function generateNewsletterHtml(campaign) {
 
     <!-- Title -->
     <h1 class="email-title" style="font-size: 34px; font-weight: 800; color: #111827; line-height: 1.2; margin: 30px 0 20px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; letter-spacing: -0.5px; word-break: break-word;">
-      ${title || subject}
+      <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="color: #111827; text-decoration: none;">${title || subject}</a>
     </h1>
 
     <!-- Author & Date Row -->
@@ -153,7 +126,7 @@ module.exports = function generateNewsletterHtml(campaign) {
           <div style="font-size: 12px; font-weight: 600; color: #9ca3af; letter-spacing: 0.5px;">${formattedDate}</div>
         </td>
         <td align="right">
-          <div style="font-size: 28px; font-weight: 900; color: #000000; letter-spacing: -2px;">CS</div>
+          <a href="${FRONTEND_URL}" style="text-decoration: none;"><div style="font-size: 28px; font-weight: 900; color: #000000; letter-spacing: -2px;">CS</div></a>
         </td>
       </tr>
     </table>
@@ -163,9 +136,9 @@ module.exports = function generateNewsletterHtml(campaign) {
       <tr>
         <td align="left">
           <!-- Icons -->
-          <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280; margin-right: 8px;">♡</a>
-          <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280; margin-right: 8px;">💬</a>
-          <a href="#" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280;">⎋</a>
+          <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280; margin-right: 8px;">♡</a>
+          <a href="${slug ? `${FRONTEND_URL}/articles/${slug}#comments` : FRONTEND_URL}" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280; margin-right: 8px;">💬</a>
+          <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e7eb; text-align: center; line-height: 36px; text-decoration: none; color: #6b7280;">⎋</a>
         </td>
         <td align="right">
           <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="display: inline-block; padding: 8px 16px; border: 1px solid #e5e7eb; border-radius: 20px; font-size: 12px; font-weight: 600; color: #6b7280; text-decoration: none; letter-spacing: 0.5px;">
