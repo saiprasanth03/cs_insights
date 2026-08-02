@@ -16,14 +16,14 @@ module.exports = function generateNewsletterHtml(campaign) {
       .replace(/#2'([^']+)'#/g, '## $1');
 
     htmlContent = marked(preProcessedContent);
-    // Convert code blocks into line-by-line nowrap divs inside a horizontal scroll container for bulletproof diagram rendering across all mobile email clients
+    // Convert code blocks into line-by-line nowrap divs inside a centered horizontal scroll container for perfect diagram alignment
     htmlContent = htmlContent.replace(/<pre><code(?: class="[^"]*")?>([\s\S]*?)<\/code><\/pre>/gi, (match, codeContent) => {
       const lines = codeContent.split('\n');
       const formattedLines = lines.map(line => 
         `<div style="white-space: nowrap !important; word-break: normal !important; word-wrap: normal !important; font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.35; letter-spacing: 0px; -webkit-text-size-adjust: 100%; color: #f4f4f5;">${line || '&nbsp;'}</div>`
       ).join('');
 
-      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 20px; border: 1px solid #27272a; text-align: left;"><div style="display: inline-block; text-align: left; min-width: 100%;">${formattedLines}</div></div>`;
+      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 20px 16px; border: 1px solid #27272a; text-align: center;"><div style="display: inline-block; text-align: left; margin: 0 auto; max-width: 100%;">${formattedLines}</div></div>`;
     });
   }
 
