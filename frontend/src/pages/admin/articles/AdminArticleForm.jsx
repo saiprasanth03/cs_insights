@@ -33,11 +33,29 @@ export default function AdminArticleForm() {
 
   const fetchData = async () => {
     try {
-      // Always fetch categories for the dropdown
-      const catRes = await getAdminCategories();
-      if (catRes.success) {
-        setCategories(catRes.data);
+      // Fetch categories for the dropdown with fallback
+      let catData = [];
+      try {
+        const catRes = await getAdminCategories();
+        if (catRes && catRes.success && Array.isArray(catRes.data) && catRes.data.length > 0) {
+          catData = catRes.data;
+        }
+      } catch (e) {
+        console.error('Admin categories fetch failed, trying public endpoint...', e);
       }
+
+      if (catData.length === 0) {
+        try {
+          const publicRes = await api.get('/categories');
+          if (publicRes.data && publicRes.data.success && Array.isArray(publicRes.data.data)) {
+            catData = publicRes.data.data;
+          }
+        } catch (e) {
+          console.error('Public categories fetch failed...', e);
+        }
+      }
+
+      setCategories(catData);
 
       if (isEditing) {
         const artRes = await getAdminArticle(id);
@@ -49,7 +67,7 @@ export default function AdminArticleForm() {
             excerpt: article.excerpt || '',
             content: article.content || '',
             coverImage: article.coverImage || '',
-            category: article.category?._id || article.category || '',
+            category: article.category?._id || article.category || (catData[0]?._id || ''),
             status: article.status || 'DRAFT',
             sendNewsletter: false,
             allowLikes: article.allowLikes ?? true,
@@ -59,6 +77,11 @@ export default function AdminArticleForm() {
         } else {
           toast.error('Failed to load article.');
         }
+      } else if (catData.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          category: prev.category || catData[0]._id
+        }));
       }
     } catch (err) {
       toast.error('An error occurred while fetching data.');
@@ -292,11 +315,13 @@ export default function AdminArticleForm() {
                   required
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 px-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 px-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all cursor-pointer font-medium"
                 >
-                  <option value="" disabled>Select a topic...</option>
+                  <option value="" disabled className="bg-white dark:bg-gray-900 text-gray-400">Select a topic...</option>
                   {categories.map(cat => (
-                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                    <option key={cat._id} value={cat._id} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white py-1">
+                      {cat.name}
+                    </option>
                   ))}
                 </select>
               </div>
