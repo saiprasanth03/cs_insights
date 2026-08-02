@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, AlertCircle, Heading1, Heading2, Bold, Image as ImageIcon, Palette } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Heading1, Heading2, Bold, Image as ImageIcon, Palette, Users, UserCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getAdminArticle, createAdminArticle, updateAdminArticle, getAdminCategories } from '../../../api/admin';
 import ImageUploader from '../../../components/ui/ImageUploader';
@@ -26,6 +26,8 @@ export default function AdminArticleForm() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [emailMode, setEmailMode] = useState('all');
+  const [selectedEmails, setSelectedEmails] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -148,6 +150,11 @@ export default function AdminArticleForm() {
         ...formData,
         status: forceStatus || formData.status
       };
+
+      // If sending to selected emails only, attach the list
+      if (formData.sendNewsletter && emailMode === 'selected' && selectedEmails.trim()) {
+        dataToSubmit.selectedEmails = selectedEmails.split(/[,\n]+/).map(e => e.trim()).filter(Boolean);
+      }
 
       const response = isEditing 
         ? await updateAdminArticle(id, dataToSubmit)
@@ -319,17 +326,56 @@ export default function AdminArticleForm() {
                   <option value="ARCHIVED">Archived</option>
                 </select>
 
-                <div className="mb-6 flex items-center gap-3 p-3 bg-brand-50 dark:bg-brand-900/10 rounded-xl border border-brand-100 dark:border-brand-800/30">
-                  <input 
-                    type="checkbox" 
-                    id="sendNewsletter"
-                    checked={formData.sendNewsletter}
-                    onChange={(e) => setFormData({...formData, sendNewsletter: e.target.checked})}
-                    className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 cursor-pointer"
-                  />
-                  <label htmlFor="sendNewsletter" className="text-sm font-medium text-brand-900 dark:text-brand-300 cursor-pointer select-none">
-                    Email to all subscribers
-                  </label>
+                <div className="mb-6 p-3 bg-brand-50 dark:bg-brand-900/10 rounded-xl border border-brand-100 dark:border-brand-800/30">
+                  <div className="flex items-center gap-3 mb-3">
+                    <input 
+                      type="checkbox" 
+                      id="sendNewsletter"
+                      checked={formData.sendNewsletter}
+                      onChange={(e) => setFormData({...formData, sendNewsletter: e.target.checked})}
+                      className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 cursor-pointer"
+                    />
+                    <label htmlFor="sendNewsletter" className="text-sm font-medium text-brand-900 dark:text-brand-300 cursor-pointer select-none">
+                      Email subscribers on publish
+                    </label>
+                  </div>
+
+                  {formData.sendNewsletter && (
+                    <div className="ml-1 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="emailMode"
+                          checked={emailMode === 'all'}
+                          onChange={() => setEmailMode('all')}
+                          className="w-4 h-4 text-brand-600 focus:ring-brand-500"
+                        />
+                        <Users className="w-3.5 h-3.5 text-brand-500" />
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">All subscribers</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="emailMode"
+                          checked={emailMode === 'selected'}
+                          onChange={() => setEmailMode('selected')}
+                          className="w-4 h-4 text-brand-600 focus:ring-brand-500"
+                        />
+                        <UserCheck className="w-3.5 h-3.5 text-accent-cyan" />
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Selected emails only</span>
+                      </label>
+
+                      {emailMode === 'selected' && (
+                        <textarea
+                          value={selectedEmails}
+                          onChange={(e) => setSelectedEmails(e.target.value)}
+                          placeholder={"Enter emails separated by commas or new lines:\nuser1@gmail.com\nuser2@gmail.com"}
+                          rows={3}
+                          className="mt-2 w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-gray-700 rounded-lg py-2 px-3 text-xs text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none resize-none placeholder:text-gray-400"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

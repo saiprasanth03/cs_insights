@@ -32,7 +32,7 @@ const emailService = require("../services/email.service");
 
 const createArticle = async (req, res) => {
   try {
-    const { sendNewsletter, ...articleData } = req.body;
+    const { sendNewsletter, selectedEmails, ...articleData } = req.body;
     const authorId = req.user?.userId || req.user?._id || req.user?.id;
     
     const article = await import_Article.Article.create({
@@ -44,8 +44,6 @@ const createArticle = async (req, res) => {
     res.status(201).json({ success: true, data: article });
 
     // Fire newsletter as a live floating Promise AFTER responding.
-    // This is NOT setImmediate — it is an active Promise that keeps
-    // the Node.js event loop alive on Render until emails are sent.
     const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
     if (isSendNewsletter && article.status === 'PUBLISHED') {
       Promise.resolve().then(async () => {
@@ -61,8 +59,16 @@ const createArticle = async (req, res) => {
             sentAt: new Date()
           }).catch(console.error);
 
-          const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
-          console.log(`[NEWSLETTER] Dispatching "${article.title}" to ${subscribers.length} subscribers in background...`);
+          // If selectedEmails provided, filter to only those; otherwise send to all
+          let subscribers;
+          if (Array.isArray(selectedEmails) && selectedEmails.length > 0) {
+            const emailList = selectedEmails.map(e => e.toLowerCase().trim());
+            subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE', email: { $in: emailList } });
+            console.log(`[NEWSLETTER] Dispatching "${article.title}" to ${subscribers.length} SELECTED subscribers (${emailList.join(', ')})...`);
+          } else {
+            subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+            console.log(`[NEWSLETTER] Dispatching "${article.title}" to ALL ${subscribers.length} subscribers...`);
+          }
           if (subscribers && subscribers.length > 0) {
             await emailService.sendNewsletter(
               {
@@ -117,7 +123,7 @@ const getArticle = async (req, res) => {
 
 const updateArticle = async (req, res) => {
   try {
-    const { sendNewsletter, ...updateData } = req.body;
+    const { sendNewsletter, selectedEmails, ...updateData } = req.body;
     const authorId = req.user?.userId || req.user?._id || req.user?.id;
 
     const article = await import_Article.Article.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
@@ -145,8 +151,16 @@ const updateArticle = async (req, res) => {
             sentAt: new Date()
           }).catch(console.error);
 
-          const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
-          console.log(`[NEWSLETTER] Dispatching update "${article.title}" to ${subscribers.length} subscribers in background...`);
+          // If selectedEmails provided, filter to only those; otherwise send to all
+          let subscribers;
+          if (Array.isArray(selectedEmails) && selectedEmails.length > 0) {
+            const emailList = selectedEmails.map(e => e.toLowerCase().trim());
+            subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE', email: { $in: emailList } });
+            console.log(`[NEWSLETTER] Dispatching update "${article.title}" to ${subscribers.length} SELECTED subscribers (${emailList.join(', ')})...`);
+          } else {
+            subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+            console.log(`[NEWSLETTER] Dispatching update "${article.title}" to ALL ${subscribers.length} subscribers...`);
+          }
           if (subscribers && subscribers.length > 0) {
             await emailService.sendNewsletter(
               {
