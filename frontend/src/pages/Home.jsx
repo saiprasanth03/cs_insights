@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, BookOpen, Layers, Code, BrainCircuit, Sparkles, Clock, Tag } from "lucide-react";
+import { ArrowRight, BookOpen, Layers, Code, BrainCircuit, Sparkles, Clock, Tag, Mail, Send, CheckCircle } from "lucide-react";
 import { Helmet } from 'react-helmet-async';
+import toast from 'react-hot-toast';
 import SearchBar from "@/components/ui/SearchBar";
 import { getFeaturedArticles } from '../api/articles';
 import api from '../api/axios';
@@ -190,6 +191,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <HomeSubscribeSection />
     </div>
   );
 }
@@ -206,5 +209,80 @@ function TopicCard({ title, description, icon, to }) {
       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 relative z-10">{title}</h3>
       <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed relative z-10">{description}</p>
     </Link>
+  );
+}
+
+function HomeSubscribeSection() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    try {
+      const response = await api.post('/newsletter/subscribe', { email });
+      if (response.data?.success) {
+        setSubscribed(true);
+        toast.success('Successfully subscribed to CS Insights newsletter!');
+        setEmail('');
+      } else {
+        toast.error(response.data?.message || 'Failed to subscribe.');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Subscription failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="py-20 relative overflow-hidden z-10 border-t border-gray-200/50 dark:border-gray-800/50">
+      <div className="container mx-auto px-4 max-w-5xl">
+        <div className="glass bg-gradient-to-br from-brand-900/30 via-gray-900/70 to-accent-violet/20 border border-brand-500/30 rounded-3xl p-10 md:p-16 text-center relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-[350px] h-[350px] bg-brand-500/20 blur-[100px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-accent-cyan/20 blur-[100px] rounded-full pointer-events-none" />
+          
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <div className="w-16 h-16 bg-brand-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-brand-500/30">
+              <Mail className="w-8 h-8 text-brand-400" />
+            </div>
+            
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">
+              Join the CS Insights Newsletter
+            </h2>
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-8">
+              Get exclusive tutorials, deep-dives into algorithms, and system design architecture delivered straight to your inbox. No spam, unsubscribe anytime.
+            </p>
+
+            {subscribed ? (
+              <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center justify-center gap-3 text-green-600 dark:text-green-400 font-medium">
+                <CheckCircle className="w-5 h-5 shrink-0" />
+                <span>You're subscribed! Check your inbox for the latest articles.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address..." 
+                  required
+                  className="bg-white dark:bg-black/60 border border-gray-300 dark:border-gray-700 rounded-xl px-5 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 flex-1 shadow-inner text-gray-900 dark:text-white"
+                />
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl px-7 py-3.5 text-base transition-all shadow-lg hover:shadow-brand-500/25 shrink-0 flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-70"
+                >
+                  {loading ? 'Subscribing...' : <><Send className="w-4 h-4" /> Subscribe</>}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
