@@ -102,8 +102,16 @@ export default function ArticlesPage() {
               </div>
               
               <div className="p-8 flex flex-col flex-1 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
-                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                    {article.category?.name && (
+                      <>
+                        <span>•</span>
+                        <span className="inline-flex items-center gap-1.5 font-medium text-brand-600 dark:text-brand-400">
+                          <Tag className="w-3.5 h-3.5" /> {article.category.name}
+                        </span>
+                      </>
+                    )}
                   </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-brand-500 transition-colors leading-tight">
                     {article.title}
