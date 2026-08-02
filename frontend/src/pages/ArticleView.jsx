@@ -200,8 +200,8 @@ export default function ArticleView() {
             components={{
               pre: ({ children, ...props }) => (
                 <div className="my-6 w-full overflow-x-auto rounded-xl bg-gray-900 dark:bg-black/80 p-4 border border-gray-800 shadow-inner text-center">
-                  <div className="inline-block text-left max-w-full">
-                    <pre className="font-mono text-sm leading-relaxed text-gray-100 min-w-max whitespace-pre" {...props}>
+                  <div className="table text-left mx-auto max-w-full">
+                    <pre className="font-mono text-sm leading-relaxed text-gray-100 min-w-max whitespace-pre text-left" {...props}>
                       {children}
                     </pre>
                   </div>
