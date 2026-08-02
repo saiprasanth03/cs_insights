@@ -163,39 +163,31 @@ class EmailService {
     console.log(`[NEWSLETTER] Starting parallel dispatch to ${subscribers.length} subscribers...`);
 
     const dispatchResults = await Promise.all(subscribers.map(async (subscriber, index) => {
-      // Step 1: Resend (First 100 subscribers quota)
+      let sent = false;
+
+      // Step 1: Try Resend — SDK v2 returns {data, error} instead of throwing, so check both
       if (index < 100 && this.useResend) {
         try {
-          await this.resend.emails.send({
+          const { data, error } = await this.resend.emails.send({
             from: process.env.FROM_EMAIL || 'CS Insights <onboarding@resend.dev>',
             to: subscriber.email,
             subject: subject,
             html: htmlContent,
           });
-          console.log(`✅ [Sub #${index + 1}] SENT via Resend: ${subscriber.email}`);
-          return true;
+          if (error) {
+            console.error(`⚠️ Resend rejected sub #${index + 1} (${subscriber.email}): ${error.message || JSON.stringify(error)}`);
+          } else {
+            console.log(`✅ [Sub #${index + 1}] SENT via Resend: ${subscriber.email}`);
+            sent = true;
+          }
         } catch (resendErr) {
-          console.error(`⚠️ Resend failed for sub #${index + 1} (${subscriber.email}), falling over:`, resendErr.message);
+          console.error(`⚠️ Resend threw for sub #${index + 1} (${subscriber.email}):`, resendErr.message);
         }
       }
 
-      // Step 2: Brevo API (Next 300 subscribers or if Resend failed)
-      if (brevoApiKey && (index >= 100 || !this.useResend)) {
-        try {
-          await this.sendViaBrevoAPI({
-            to: subscriber.email,
-            subject,
-            html: htmlContent,
-            fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com',
-          });
-          console.log(`✅ [Sub #${index + 1}] SENT via Brevo API: ${subscriber.email}`);
-          return true;
-        } catch (brevoErr) {
-          console.error(`⚠️ Brevo API failed for sub #${index + 1} (${subscriber.email}), falling over:`, brevoErr.message);
-        }
-      }
+      if (sent) return true;
 
-      // Step 3: Gmail Nodemailer (100% Guaranteed Delivery)
+      // Step 2: Gmail Nodemailer — most reliable, try first as primary fallback
       if (this.transporter) {
         try {
           await this.transporter.sendMail({
@@ -205,13 +197,15 @@ class EmailService {
             html: htmlContent
           });
           console.log(`✅ [Sub #${index + 1}] SENT via Gmail: ${subscriber.email}`);
-          return true;
+          sent = true;
         } catch (gmailErr) {
-          console.error(`❌ Gmail failed for sub #${index + 1} (${subscriber.email}):`, gmailErr.message);
+          console.error(`⚠️ Gmail failed for sub #${index + 1} (${subscriber.email}):`, gmailErr.message);
         }
       }
 
-      // Step 4: Final Brevo API fallback if Gmail was not available
+      if (sent) return true;
+
+      // Step 3: Brevo API as secondary fallback
       if (brevoApiKey) {
         try {
           await this.sendViaBrevoAPI({
@@ -220,14 +214,14 @@ class EmailService {
             html: htmlContent,
             fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com',
           });
-          console.log(`✅ [Sub #${index + 1}] SENT via Brevo API (Final Fallback): ${subscriber.email}`);
-          return true;
-        } catch (finalErr) {
-          console.error(`❌ Final Brevo fallback failed for sub #${index + 1} (${subscriber.email}):`, finalErr.message);
+          console.log(`✅ [Sub #${index + 1}] SENT via Brevo API: ${subscriber.email}`);
+          sent = true;
+        } catch (brevoErr) {
+          console.error(`❌ Brevo failed for sub #${index + 1} (${subscriber.email}):`, brevoErr.message);
         }
       }
 
-      return false;
+      return sent;
     }));
 
     const successCount = dispatchResults.filter(Boolean).length;
