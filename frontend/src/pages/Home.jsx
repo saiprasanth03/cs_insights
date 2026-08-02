@@ -69,14 +69,14 @@ export default function Home() {
         </div>
 
         {/* Animated Background Elements */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/50 rounded-full filter blur-[100px] animate-pulse" />
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-accent-cyan/50 rounded-full filter blur-[100px] animate-bounce" />
-        <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-accent-violet/40 rounded-full filter blur-[100px] animate-pulse" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPPHBhdGggZD0iTTAgMGgxdjQwaC0xem0wIDM5aDQwdjFIMHoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4nKV0gW21hc2staW1hZ2U6bGluZWFyLWdyYWRpZW50KHRvX2JvdHRvbSx0cmFuc3BhcmVudCxibGFjayx0cmFuc3BhcmVudCld" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/50 rounded-full filter blur-[100px] animate-pulse pointer-events-none" />
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-accent-cyan/50 rounded-full filter blur-[100px] animate-bounce pointer-events-none" />
+        <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-accent-violet/40 rounded-full filter blur-[100px] animate-pulse pointer-events-none" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPPHBhdGggZD0iTTAgMGgxdjQwaC0xem0wIDM5aDQwdjFIMHoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4nKV0gW21hc2staW1hZ2U6bGluZWFyLWdyYWRpZW50KHRvX2JvdHRvbSx0cmFuc3BhcmVudCxibGFjayx0cmFuc3BhcmVudCld] pointer-events-none" />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background pointer-events-none" />
         
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="container mx-auto px-4 relative z-20">
           <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
             
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-brand-600 dark:text-brand-400 text-sm font-medium mb-8 animate-float">
@@ -134,30 +134,30 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {featuredArticles.map((article, i) => (
-                <div key={article._id || i} className="group flex flex-col rounded-3xl glass overflow-hidden border border-gray-200/50 dark:border-gray-800/50 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300">
-                  <div className="p-8 flex flex-col flex-1 relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
-                      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
-                        <span>{new Date(article.createdAt).toLocaleDateString()}</span>
-                        {article.category?.name && (
-                          <>
-                            <span>•</span>
-                            <span className="inline-flex items-center gap-1.5 font-medium text-brand-600 dark:text-brand-400">
-                              <Tag className="w-3.5 h-3.5" /> {article.category.name}
-                            </span>
-                          </>
-                        )}
-                      </div>
+                <Link key={article._id || i} to={`/articles/${article.slug}`} className="group flex flex-col rounded-3xl glass overflow-hidden border border-gray-200/50 dark:border-gray-800/50 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 relative z-20 cursor-pointer">
+                  <div className="p-8 flex flex-col flex-1 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
+                    <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                      {article.category?.name && (
+                        <>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-1.5 font-medium text-brand-600 dark:text-brand-400">
+                            <Tag className="w-3.5 h-3.5" /> {article.category.name}
+                          </span>
+                        </>
+                      )}
+                    </div>
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-brand-500 transition-colors leading-tight">
-                      <Link to={`/articles/${article.slug}`} className="focus:outline-none">
-                        <span className="absolute inset-0" aria-hidden="true" />
-                        {article.title}
-                      </Link>
+                      {article.title}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 line-clamp-3 mb-6 flex-1">
                       {article.excerpt}
                     </p>
+                    <div className="flex items-center text-brand-600 dark:text-brand-400 font-semibold group-hover:translate-x-1 transition-transform mt-auto">
+                      Read Article <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -201,7 +201,7 @@ function TopicCard({ title, description, icon, to }) {
   return (
     <Link 
       to={to} 
-      className="group flex flex-col p-8 rounded-3xl glass hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgba(99,102,241,0.1)] border border-gray-200/50 dark:border-gray-800/50 relative overflow-hidden"
+      className="group flex flex-col p-8 rounded-3xl glass hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgba(99,102,241,0.1)] border border-gray-200/50 dark:border-gray-800/50 relative overflow-hidden z-20 cursor-pointer"
     >
       <div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform relative z-10">
         {icon}
