@@ -122,9 +122,22 @@ export default function AdminArticleForm() {
   };
 
   const handleSubmit = async (e, forceStatus = null) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    
+    if (!formData.title?.trim()) {
+      toast.error('Please enter an article title.');
+      return;
+    }
+    if (!formData.content?.trim()) {
+      toast.error('Please enter article content.');
+      return;
+    }
     if (!formData.category) {
-      toast.error('Please select a topic (category).');
+      toast.error('Please select a topic.');
+      return;
+    }
+    if (!formData.slug?.trim()) {
+      toast.error('Please enter a URL slug.');
       return;
     }
 
@@ -140,14 +153,14 @@ export default function AdminArticleForm() {
         ? await updateAdminArticle(id, dataToSubmit)
         : await createAdminArticle(dataToSubmit);
         
-      if (response.success) {
-        toast.success(isEditing ? 'Article updated successfully!' : 'Article created successfully!');
+      if (response && response.success) {
+        toast.success(isEditing ? 'Article updated successfully!' : 'Article saved successfully!');
         navigate('/admin/articles');
       } else {
-        toast.error(response.error || 'Failed to save article.');
+        toast.error(response?.message || response?.error || 'Failed to save article.');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'An error occurred while saving.');
+      toast.error(err.response?.data?.message || err.message || 'An error occurred while saving.');
     } finally {
       setSaving(false);
     }

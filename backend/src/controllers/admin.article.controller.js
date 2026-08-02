@@ -72,7 +72,11 @@ const createArticle = async (req, res) => {
 
     res.status(201).json({ success: true, data: article });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    let message = error.message;
+    if (error.code === 11000) {
+      message = 'An article with this URL Slug or Title already exists. Please change the URL Slug or Title.';
+    }
+    res.status(400).json({ success: false, message });
   }
 };
 const getArticles = async (req, res) => {
@@ -110,7 +114,11 @@ const updateArticle = async (req, res) => {
     }
     res.status(200).json({ success: true, data: article });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    let message = error.message;
+    if (error.code === 11000) {
+      message = 'An article with this URL Slug or Title already exists. Please change the URL Slug or Title.';
+    }
+    res.status(400).json({ success: false, message });
   }
 };
 const deleteArticle = async (req, res) => {
