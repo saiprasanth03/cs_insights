@@ -78,7 +78,7 @@ export default function AdminArticleForm() {
             coverImage: article.coverImage || '',
             category: article.category?._id || article.category || (catData[0]?._id || ''),
             status: article.status || 'DRAFT',
-            sendNewsletter: false,
+            sendNewsletter: true,
             allowLikes: article.allowLikes ?? true,
             allowComments: article.allowComments ?? true,
             allowShares: article.allowShares ?? true

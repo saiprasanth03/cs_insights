@@ -42,31 +42,36 @@ const createArticle = async (req, res) => {
 
     const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
     if (isSendNewsletter && article.status === 'PUBLISHED') {
-      import_NewsletterCampaign.NewsletterCampaign.create({
-        subject: article.title,
-        title: article.title,
-        contentHtml: article.content,
-        contentPlain: article.excerpt || article.title,
-        status: "SENT",
-        type: "ARTICLE",
-        createdBy: authorId,
-        sentAt: new Date()
-      }).catch(console.error);
+      try {
+        import_NewsletterCampaign.NewsletterCampaign.create({
+          subject: article.title,
+          title: article.title,
+          contentHtml: article.content,
+          contentPlain: article.excerpt || article.title,
+          status: "SENT",
+          type: "ARTICLE",
+          createdBy: authorId,
+          sentAt: new Date()
+        }).catch(console.error);
 
-      import_Subscriber.Subscriber.find({ status: 'ACTIVE' }).then(subscribers => {
-        console.log(`[NEWSLETTER] Sending article "${article.title}" to ${subscribers.length} subscribers.`);
-        emailService.sendNewsletter(
-          {
-            subject: article.title,
-            title: article.title,
-            slug: article.slug,
-            content: article.content,
-            coverImage: article.coverImage,
-            author: req.user?.name || 'CS Insights'
-          },
-          subscribers
-        ).catch(console.error);
-      });
+        const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+        console.log(`[NEWSLETTER] Sending article "${article.title}" to ${subscribers.length} active subscribers.`);
+        if (subscribers && subscribers.length > 0) {
+          await emailService.sendNewsletter(
+            {
+              subject: article.title,
+              title: article.title,
+              slug: article.slug,
+              content: article.content,
+              coverImage: article.coverImage,
+              author: req.user?.name || 'CS Insights'
+            },
+            subscribers
+          );
+        }
+      } catch (err) {
+        console.error('Newsletter error in createArticle:', err);
+      }
     }
 
     res.status(201).json({ success: true, data: article });
@@ -117,31 +122,36 @@ const updateArticle = async (req, res) => {
 
     const isSendNewsletter = sendNewsletter === true || sendNewsletter === 'true';
     if (isSendNewsletter && article.status === 'PUBLISHED') {
-      import_NewsletterCampaign.NewsletterCampaign.create({
-        subject: article.title,
-        title: article.title,
-        contentHtml: article.content,
-        contentPlain: article.excerpt || article.title,
-        status: "SENT",
-        type: "ARTICLE",
-        createdBy: authorId,
-        sentAt: new Date()
-      }).catch(console.error);
+      try {
+        import_NewsletterCampaign.NewsletterCampaign.create({
+          subject: article.title,
+          title: article.title,
+          contentHtml: article.content,
+          contentPlain: article.excerpt || article.title,
+          status: "SENT",
+          type: "ARTICLE",
+          createdBy: authorId,
+          sentAt: new Date()
+        }).catch(console.error);
 
-      import_Subscriber.Subscriber.find({ status: 'ACTIVE' }).then(subscribers => {
-        console.log(`[NEWSLETTER] Sending article update "${article.title}" to ${subscribers.length} subscribers.`);
-        emailService.sendNewsletter(
-          {
-            subject: article.title,
-            title: article.title,
-            slug: article.slug,
-            content: article.content,
-            coverImage: article.coverImage,
-            author: req.user?.name || 'CS Insights'
-          },
-          subscribers
-        ).catch(console.error);
-      });
+        const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
+        console.log(`[NEWSLETTER] Sending article update "${article.title}" to ${subscribers.length} active subscribers.`);
+        if (subscribers && subscribers.length > 0) {
+          await emailService.sendNewsletter(
+            {
+              subject: article.title,
+              title: article.title,
+              slug: article.slug,
+              content: article.content,
+              coverImage: article.coverImage,
+              author: req.user?.name || 'CS Insights'
+            },
+            subscribers
+          );
+        }
+      } catch (err) {
+        console.error('Newsletter error in updateArticle:', err);
+      }
     }
 
     res.status(200).json({ success: true, data: article });
