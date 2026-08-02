@@ -118,15 +118,17 @@ module.exports = function generateNewsletterHtml(campaign) {
       <a href="${slug ? `${FRONTEND_URL}/articles/${slug}` : FRONTEND_URL}" style="color: #111827; text-decoration: none;">${title || subject}</a>
     </h1>
 
-    <!-- Author & Date Row -->
+    <!-- Logo & Author/Date Row -->
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px; border-bottom: 1px solid #f3f4f6; padding-bottom: 20px;">
       <tr>
-        <td align="left">
+        <td align="left" valign="middle">
+          <a href="${FRONTEND_URL}" style="text-decoration: none;">
+            <div style="font-size: 28px; font-weight: 900; color: #000000; letter-spacing: -2px;">CS</div>
+          </a>
+        </td>
+        <td align="right" valign="middle">
           <div style="font-size: 12px; font-weight: 700; color: #4b5563; margin-bottom: 4px; letter-spacing: 0.5px;">${author}</div>
           <div style="font-size: 12px; font-weight: 600; color: #9ca3af; letter-spacing: 0.5px;">${formattedDate}</div>
-        </td>
-        <td align="right">
-          <a href="${FRONTEND_URL}" style="text-decoration: none;"><div style="font-size: 28px; font-weight: 900; color: #000000; letter-spacing: -2px;">CS</div></a>
         </td>
       </tr>
     </table>
