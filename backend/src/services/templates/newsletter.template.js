@@ -16,14 +16,9 @@ module.exports = function generateNewsletterHtml(campaign) {
       .replace(/#2'([^']+)'#/g, '## $1');
 
     htmlContent = marked(preProcessedContent);
-    // Convert code blocks into line-by-line nowrap divs inside a table-centered container so character columns align with 100% mathematical precision
+    // Convert code blocks into clean <pre> tags with white-space: pre !important to render diagrams exactly as posted
     htmlContent = htmlContent.replace(/<pre><code(?: class="[^"]*")?>([\s\S]*?)<\/code><\/pre>/gi, (match, codeContent) => {
-      const lines = codeContent.split('\n');
-      const formattedLines = lines.map(line => 
-        `<div style="white-space: nowrap !important; word-break: normal !important; word-wrap: normal !important; font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.35; letter-spacing: 0px; -webkit-text-size-adjust: 100%; color: #f4f4f5; text-align: left;">${line || '&nbsp;'}</div>`
-      ).join('');
-
-      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 20px 16px; border: 1px solid #27272a; text-align: center;"><div style="display: table; margin: 0 auto; text-align: left; max-width: 100%;">${formattedLines}</div></div>`;
+      return `<div style="width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 24px 0; background-color: #18181b; border-radius: 12px; padding: 20px; border: 1px solid #27272a; text-align: left;"><pre style="margin: 0; padding: 0; background: transparent; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace !important; font-size: 12px; line-height: 1.4; color: #f4f4f5; white-space: pre !important; word-break: normal !important; word-wrap: normal !important; -webkit-text-size-adjust: 100%; text-align: left; display: block;">${codeContent}</pre></div>`;
     });
   }
 

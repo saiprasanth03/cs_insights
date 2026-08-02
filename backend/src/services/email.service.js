@@ -132,36 +132,28 @@ class EmailService {
     const htmlContent = generateNewsletterHtml(campaign);
     const subject = campaign.subject || campaign.title;
     const fromAddress = `"CS Insights" <${process.env.GMAIL_USER || process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com'}>`;
+    const brevoApiKey = process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.BREVO_SMTP_KEY;
 
-    let remainingSubscribers = [...subscribers];
-    let successCount = 0;
-
-    // 1. Try Gmail Nodemailer first (100% private individual sending per subscriber)
-    if (this.transporter && remainingSubscribers.length > 0) {
-      const unsent = [];
-      for (const subscriber of remainingSubscribers) {
+    // Parallel email dispatch across all subscribers for fast instant delivery
+    const dispatchResults = await Promise.all(subscribers.map(async (subscriber) => {
+      // 1. Try Gmail Nodemailer first
+      if (this.transporter) {
         try {
           await this.transporter.sendMail({
             from: fromAddress,
-            to: subscriber.email, // ONLY the individual recipient's email address in TO field
+            to: subscriber.email,
             subject: subject,
             html: htmlContent
           });
           console.log(`✅ PRIVATELY SENT newsletter to ${subscriber.email} via Gmail!`);
-          successCount++;
+          return true;
         } catch (err) {
-          console.error(`❌ Failed to send to ${subscriber.email} via Gmail:`, err.message);
-          unsent.push(subscriber);
+          console.error(`❌ Gmail failed for ${subscriber.email}:`, err.message);
         }
       }
-      remainingSubscribers = unsent;
-    }
 
-    // 2. Fallback to Brevo API for any unsent subscribers
-    const brevoApiKey = process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.BREVO_SMTP_KEY;
-    if (brevoApiKey && remainingSubscribers.length > 0) {
-      const unsent = [];
-      for (const subscriber of remainingSubscribers) {
+      // 2. Fallback to Brevo API
+      if (brevoApiKey) {
         try {
           await this.sendViaBrevoAPI({
             to: subscriber.email,
@@ -170,18 +162,14 @@ class EmailService {
             fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com',
           });
           console.log(`✅ PRIVATELY SENT newsletter to ${subscriber.email} via Brevo API!`);
-          successCount++;
+          return true;
         } catch (err) {
           console.error(`❌ Brevo API failed for ${subscriber.email}:`, err.message);
-          unsent.push(subscriber);
         }
       }
-      remainingSubscribers = unsent;
-    }
 
-    // 3. Fallback to Resend for any remaining subscribers
-    if (this.useResend && remainingSubscribers.length > 0) {
-      for (const subscriber of remainingSubscribers) {
+      // 3. Fallback to Resend
+      if (this.useResend) {
         try {
           await this.resend.emails.send({
             from: process.env.FROM_EMAIL || 'CS Insights <onboarding@resend.dev>',
@@ -190,13 +178,17 @@ class EmailService {
             html: htmlContent,
           });
           console.log(`✅ PRIVATELY SENT newsletter to ${subscriber.email} via Resend!`);
-          successCount++;
+          return true;
         } catch (err) {
           console.error(`❌ Resend failed for ${subscriber.email}:`, err.message);
         }
       }
-    }
 
+      return false;
+    }));
+
+    const successCount = dispatchResults.filter(Boolean).length;
+    console.log(`✅ Parallel email dispatch completed: ${successCount}/${subscribers.length} sent successfully.`);
     return { success: true, count: successCount };
   }
 
