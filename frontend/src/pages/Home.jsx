@@ -250,10 +250,10 @@ function HomeSubscribeSection() {
             </div>
             
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">
-              Join the CS Insights Newsletter
+              Get CS Insights Articles
             </h2>
             <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-8">
-              Get exclusive tutorials, deep-dives into algorithms, and system design architecture delivered straight to your inbox. No spam, unsubscribe anytime.
+              Get the latest computer science articles, algorithm deep-dives, and system design insights delivered straight to your inbox. No spam, unsubscribe anytime.
             </p>
 
             {subscribed ? (
@@ -274,9 +274,9 @@ function HomeSubscribeSection() {
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl px-7 py-3.5 text-base transition-all shadow-lg hover:shadow-brand-500/25 shrink-0 flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-70"
+                  className="bg-gradient-to-r from-brand-600 to-accent-cyan hover:from-brand-500 hover:to-brand-400 text-white font-semibold rounded-xl px-8 py-3.5 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 text-base shrink-0 disabled:opacity-70"
                 >
-                  {loading ? 'Subscribing...' : <><Send className="w-4 h-4" /> Subscribe</>}
+                  <Send className="w-4 h-4" /> {loading ? 'Subscribing...' : 'Subscribe to Articles'}
                 </button>
               </form>
             )}

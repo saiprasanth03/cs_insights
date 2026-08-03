@@ -66,8 +66,8 @@ export default function AdminNewsletters() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Send Newsletter</h1>
-        <p className="text-gray-500 dark:text-gray-400">Blast a beautiful email campaign to all your subscribers.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Article Email Broadcast & Logs</h1>
+        <p className="text-gray-500 dark:text-gray-400">Send an article email broadcast or view delivery failure logs for article emails.</p>
       </div>
 
       {status.message && (
@@ -156,7 +156,7 @@ export default function AdminNewsletters() {
               disabled={loading}
               className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:-translate-y-0"
             >
-              {loading ? 'Sending...' : <><Send className="w-4 h-4" /> Send Campaign</>}
+              {loading ? 'Sending...' : <><Send className="w-4 h-4" /> Broadcast Article Email</>}
             </button>
           </div>
         </form>
@@ -164,7 +164,7 @@ export default function AdminNewsletters() {
 
       {/* Campaign History */}
       <div className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">Campaign History</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">Article Email Broadcast History</h2>
         
         {loadingCampaigns ? (
           <div className="flex justify-center p-8">

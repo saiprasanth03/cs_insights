@@ -44,9 +44,9 @@ export default function NewsletterPage() {
             <Mail className="w-10 h-10 text-brand-500" />
           </div>
           
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-6">Join the CS Insights Newsletter</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-6">Subscribe to CS Insights Articles</h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 mb-10">
-            Get exclusive tutorials, deep-dives into algorithms, and system design interviews delivered straight to your inbox. No spam, ever.
+            Get exclusive articles, algorithm deep-dives, and system design insights delivered straight to your inbox. No spam, ever.
           </p>
           
           {status === 'success' && (

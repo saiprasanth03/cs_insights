@@ -49,11 +49,11 @@ export default function FloatingSubscribe() {
             <div className="bg-brand-500/10 p-2 rounded-lg text-brand-500">
               <Mail className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">Subscribe</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white">Subscribe to Articles</h3>
           </div>
           
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Get the latest computer science concepts and tutorials in your inbox.
+            Get the latest computer science articles delivered straight to your inbox.
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -70,7 +70,7 @@ export default function FloatingSubscribe() {
               disabled={loading}
               className="bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl px-4 py-2.5 text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-70 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
-              {loading ? 'Subscribing...' : <><Send className="w-4 h-4" /> Subscribe Now</>}
+              {loading ? 'Subscribing...' : <><Send className="w-4 h-4" /> Subscribe to Articles</>}
             </button>
           </form>
 

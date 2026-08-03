@@ -98,8 +98,8 @@ export default function AdminDashboard() {
               View Subscribers List
             </Link>
             <Link to="/admin/newsletters" className="px-6 py-4 glass bg-gradient-to-r from-accent-violet to-brand-600 hover:from-brand-500 hover:to-accent-violet text-white rounded-2xl text-left font-medium transition-all hover:-translate-y-1 shadow-lg hover:shadow-xl flex items-center justify-between">
-              <span>Send Newsletter Campaign</span>
-              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-bold">Campaigns & Failures</span>
+              <span>Article Email Logs & Broadcast</span>
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-bold">Articles & Failures</span>
             </Link>
             <Link to="/admin/articles/new" className="px-6 py-4 glass bg-white dark:bg-black/40 hover:bg-gray-50 dark:hover:bg-black/60 text-gray-900 dark:text-white rounded-2xl text-left font-medium transition-all hover:-translate-y-1 border border-gray-200/50 dark:border-gray-700/50">
               Write New Article
