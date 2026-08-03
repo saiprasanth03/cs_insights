@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, CheckCircle2, Clock, AlertCircle, XCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Mail, CheckCircle2, Clock, AlertCircle, XCircle, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../../api/axios';
 
@@ -45,9 +46,17 @@ export default function AdminSubscribers() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Newsletter Subscribers</h1>
-        <p className="text-gray-500 dark:text-gray-400">View all users who have subscribed to your email campaigns.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Newsletter Subscribers</h1>
+          <p className="text-gray-500 dark:text-gray-400">View all users who have subscribed to your email campaigns.</p>
+        </div>
+        <Link 
+          to="/admin/newsletters" 
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg shrink-0"
+        >
+          <Send className="w-4 h-4" /> Send Campaign & Failures Log ↗
+        </Link>
       </div>
 
       {error && (

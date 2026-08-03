@@ -18,6 +18,7 @@ import AdminTopicForm from "@/pages/admin/topics/AdminTopicForm";
 import AdminArticles from "@/pages/admin/articles/AdminArticles";
 import AdminArticleForm from "@/pages/admin/articles/AdminArticleForm";
 import AdminSubscribers from "@/pages/admin/newsletter/AdminSubscribers";
+import AdminNewsletters from "@/pages/admin/newsletter/AdminNewsletters";
 import AdminAuthors from "@/pages/admin/authors/AdminAuthors";
 import AdminAuthorForm from "@/pages/admin/authors/AdminAuthorForm";
 import FloatingSubscribe from "@/components/layout/FloatingSubscribe";
@@ -84,6 +85,7 @@ export default function App() {
           <Route path="/admin/articles/edit/:id" element={<AdminArticleForm />} />
           
           <Route path="/admin/subscribers" element={<AdminSubscribers />} />
+          <Route path="/admin/newsletters" element={<AdminNewsletters />} />
 
           <Route path="/topics" element={<Topics />} />
           <Route path="/login" element={<Login />} />
