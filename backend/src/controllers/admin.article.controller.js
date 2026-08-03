@@ -28,6 +28,7 @@ module.exports = __toCommonJS(admin_article_controller_exports);
 var import_Article = require("../models/Article");
 var import_NewsletterCampaign = require("../models/NewsletterCampaign");
 var import_Subscriber = require("../models/Subscriber");
+var import_User = require("../models/User");
 const emailService = require("../services/email.service");
 
 const createArticle = async (req, res) => {
@@ -58,6 +59,27 @@ const createArticle = async (req, res) => {
             createdBy: authorId,
             sentAt: new Date()
           }).catch(console.error);
+
+          // Sync any registered users to Subscriber collection first
+          try {
+            const users = await import_User.User.find({}, 'email createdAt');
+            for (const u of users) {
+              if (u.email) {
+                const cleanEmail = u.email.trim().toLowerCase();
+                const existing = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
+                if (!existing) {
+                  await import_Subscriber.Subscriber.create({
+                    email: cleanEmail,
+                    status: import_Subscriber.SubscriberStatus.ACTIVE,
+                    subscribedAt: u.createdAt || new Date(),
+                    verifiedAt: u.createdAt || new Date()
+                  });
+                }
+              }
+            }
+          } catch (syncErr) {
+            console.error("User sync error in createArticle:", syncErr.message);
+          }
 
           // If selectedEmails provided, filter to only those; otherwise send to all
           let subscribers;
@@ -150,6 +172,27 @@ const updateArticle = async (req, res) => {
             createdBy: authorId,
             sentAt: new Date()
           }).catch(console.error);
+
+          // Sync any registered users to Subscriber collection first
+          try {
+            const users = await import_User.User.find({}, 'email createdAt');
+            for (const u of users) {
+              if (u.email) {
+                const cleanEmail = u.email.trim().toLowerCase();
+                const existing = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
+                if (!existing) {
+                  await import_Subscriber.Subscriber.create({
+                    email: cleanEmail,
+                    status: import_Subscriber.SubscriberStatus.ACTIVE,
+                    subscribedAt: u.createdAt || new Date(),
+                    verifiedAt: u.createdAt || new Date()
+                  });
+                }
+              }
+            }
+          } catch (syncErr) {
+            console.error("User sync error in updateArticle:", syncErr.message);
+          }
 
           // If selectedEmails provided, filter to only those; otherwise send to all
           let subscribers;

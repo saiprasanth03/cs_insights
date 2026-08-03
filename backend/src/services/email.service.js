@@ -145,7 +145,7 @@ class EmailService {
 
   async sendNewsletter(articleData, subscribers) {
     await this.ensureInitialized();
-    const subject = `[CS Insights] ${articleData.title || articleData.subject}`;
+    const subject = articleData.subject || `[CS Insights] ${articleData.title}`;
     const siteUrl = process.env.FRONTEND_URL || 'https://cs-insights-frontend.vercel.app';
     const articleUrl = `${siteUrl}/articles/${articleData.slug || ''}`;
 
@@ -154,10 +154,19 @@ class EmailService {
       content: articleData.content,
       coverImage: articleData.coverImage,
       articleUrl: articleUrl,
-      author: articleData.author || 'CS Insights Team'
+      author: articleData.author || 'CS Insights Team',
+      slug: articleData.slug
     });
 
+    // Plain-text alternative for Primary Inbox delivery
+    const plainTextBody = `CS INSIGHTS: ${articleData.title || articleData.subject}\n\n` +
+      `By ${articleData.author || 'CS Insights Team'}\n\n` +
+      `${articleData.excerpt || (articleData.content ? articleData.content.replace(/<[^>]*>?/gm, '').substring(0, 300) : '')}...\n\n` +
+      `Read full article: ${articleUrl}\n\n` +
+      `To unsubscribe: ${siteUrl}/unsubscribe`;
+
     const fromAddress = process.env.FROM_EMAIL || `"CS Insights" <cs.insights3@gmail.com>`;
+    const replyToAddress = `"CS Insights" <cs.insights3@gmail.com>`;
     const brevoApiKey = process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.BREVO_SMTP_KEY;
 
     console.log(`[NEWSLETTER] Starting parallel dispatch to ${subscribers.length} subscribers...`);
@@ -165,7 +174,31 @@ class EmailService {
     const dispatchResults = await Promise.all(subscribers.map(async (subscriber, index) => {
       let sent = false;
 
-      // Step 1: Try Resend — SDK v2 returns {data, error} instead of throwing, so check both
+      // Step 1: Gmail Nodemailer — Primary & Most Reliable for Primary Inbox delivery
+      if (this.transporter) {
+        try {
+          await this.transporter.sendMail({
+            from: fromAddress,
+            replyTo: replyToAddress,
+            to: subscriber.email,
+            subject: subject,
+            text: plainTextBody,
+            html: htmlContent,
+            headers: {
+              'X-Mailer': 'CS Insights Engine',
+              'X-Report-Abuse-To': 'cs.insights3@gmail.com',
+            }
+          });
+          console.log(`✅ [Sub #${index + 1}] SENT via Gmail: ${subscriber.email}`);
+          sent = true;
+        } catch (gmailErr) {
+          console.error(`⚠️ Gmail failed for sub #${index + 1} (${subscriber.email}):`, gmailErr.message);
+        }
+      }
+
+      if (sent) return true;
+
+      // Step 2: Try Resend
       if (index < 100 && this.useResend) {
         try {
           const { data, error } = await this.resend.emails.send({
@@ -173,6 +206,7 @@ class EmailService {
             to: subscriber.email,
             subject: subject,
             html: htmlContent,
+            text: plainTextBody,
           });
           if (error) {
             console.error(`⚠️ Resend rejected sub #${index + 1} (${subscriber.email}): ${error.message || JSON.stringify(error)}`);
@@ -182,24 +216,6 @@ class EmailService {
           }
         } catch (resendErr) {
           console.error(`⚠️ Resend threw for sub #${index + 1} (${subscriber.email}):`, resendErr.message);
-        }
-      }
-
-      if (sent) return true;
-
-      // Step 2: Gmail Nodemailer — most reliable, try first as primary fallback
-      if (this.transporter) {
-        try {
-          await this.transporter.sendMail({
-            from: fromAddress,
-            to: subscriber.email,
-            subject: subject,
-            html: htmlContent
-          });
-          console.log(`✅ [Sub #${index + 1}] SENT via Gmail: ${subscriber.email}`);
-          sent = true;
-        } catch (gmailErr) {
-          console.error(`⚠️ Gmail failed for sub #${index + 1} (${subscriber.email}):`, gmailErr.message);
         }
       }
 
@@ -272,7 +288,7 @@ class EmailService {
       }
 
       if (this.transporter) {
-        let fromEmail = `"CS Insights" <${process.env.GMAIL_USER || 'support@csinsights.com'}>`;
+        let fromEmail = `"CS Insights" <${process.env.GMAIL_USER || 'cs.insights3@gmail.com'}>`;
         let info = await this.transporter.sendMail({ from: fromEmail, to: email, subject, html: htmlContent });
         console.log(`Password reset email sent to ${email} via SMTP`);
         return info;
@@ -310,7 +326,7 @@ class EmailService {
           to: targetEmail,
           subject: 'Test Email - CS Insights (Brevo)',
           html: '<p>✅ This test email confirms Brevo API is configured correctly in CS Insights.</p>',
-          fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL,
+          fromEmail: process.env.BREVO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'cs.insights3@gmail.com',
         });
         results.brevo.status = 'SUCCESS';
       } catch (e) {
@@ -320,7 +336,7 @@ class EmailService {
       // SMTP fallback test
       results.brevo.configured = true;
       try {
-        let fromEmail = `"CS Insights Test" <${process.env.GMAIL_USER || 'support@csinsights.com'}>`;
+        let fromEmail = `"CS Insights Test" <${process.env.GMAIL_USER || 'cs.insights3@gmail.com'}>`;
         await this.transporter.sendMail({
           from: fromEmail,
           to: targetEmail,

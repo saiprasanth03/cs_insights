@@ -39,6 +39,7 @@ module.exports = __toCommonJS(auth_controller_exports);
 var import_bcryptjs = __toESM(require("bcryptjs"));
 var import_google_auth_library = require("google-auth-library");
 var import_User = require("../models/User");
+var import_Subscriber = require("../models/Subscriber");
 var import_jwt = require("../utils/jwt");
 var import_env = require("../config/env");
 var crypto = require("crypto");
@@ -65,6 +66,23 @@ const register = async (req, res) => {
       roles: [import_User.UserRole.READER],
       authProviders: [import_User.AuthProvider.LOCAL]
     });
+
+    // Auto-subscribe user to newsletter
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const existingSub = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
+      if (!existingSub) {
+        await import_Subscriber.Subscriber.create({
+          email: cleanEmail,
+          status: import_Subscriber.SubscriberStatus.ACTIVE,
+          subscribedAt: new Date(),
+          verifiedAt: new Date()
+        });
+      }
+    } catch (subErr) {
+      console.error("Auto-subscribe error on register:", subErr.message);
+    }
+
     const token = (0, import_jwt.generateToken)({ userId: user._id, roles: user.roles });
     res.cookie("token", token, {
       httpOnly: true,
@@ -165,6 +183,23 @@ const googleLogin = async (req, res) => {
         googleId: payload.sub
       });
     }
+
+    // Auto-subscribe Google user to newsletter
+    try {
+      const cleanEmail = payload.email.trim().toLowerCase();
+      const existingSub = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
+      if (!existingSub) {
+        await import_Subscriber.Subscriber.create({
+          email: cleanEmail,
+          status: import_Subscriber.SubscriberStatus.ACTIVE,
+          subscribedAt: new Date(),
+          verifiedAt: new Date()
+        });
+      }
+    } catch (subErr) {
+      console.error("Auto-subscribe error on Google login:", subErr.message);
+    }
+
     const jwtToken = (0, import_jwt.generateToken)({ userId: user._id, roles: user.roles });
     res.cookie("token", jwtToken, {
       httpOnly: true,

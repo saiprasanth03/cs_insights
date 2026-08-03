@@ -40,21 +40,19 @@ const emailProvider = new import_GoogleAppsScriptEmailProvider.GoogleAppsScriptE
 const subscribe = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       res.status(400).json({ success: false, message: "Email is required" });
       return;
     }
-    let subscriber = await import_Subscriber.Subscriber.findOne({ email });
+    const cleanEmail = email.trim().toLowerCase();
+    let subscriber = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
     if (subscriber) {
       if (subscriber.status === import_Subscriber.SubscriberStatus.ACTIVE) {
-        res.status(400).json({ success: false, message: "Already subscribed" });
+        res.status(200).json({ success: true, message: "Already subscribed" });
         return;
       }
-      if (subscriber.status === import_Subscriber.SubscriberStatus.UNSUBSCRIBED) {
-        subscriber.status = import_Subscriber.SubscriberStatus.PENDING;
-      }
     } else {
-      subscriber = new import_Subscriber.Subscriber({ email });
+      subscriber = new import_Subscriber.Subscriber({ email: cleanEmail });
     }
     
     // Auto-verify for simplicity

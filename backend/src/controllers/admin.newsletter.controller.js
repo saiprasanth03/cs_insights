@@ -27,6 +27,7 @@ __export(admin_newsletter_controller_exports, {
 module.exports = __toCommonJS(admin_newsletter_controller_exports);
 var import_NewsletterCampaign = require("../models/NewsletterCampaign");
 var import_Subscriber = require("../models/Subscriber");
+var import_User = require("../models/User");
 var emailService = require("../services/email.service");
   const testEmail = async (req, res) => {
     try {
@@ -54,12 +55,8 @@ const createCampaign = async (req, res) => {
     
     let previewUrl = null;
     
-    // Always generate a preview link by sending to a test address if no subscribers exist
-    const recipients = subscribers.length > 0 ? subscribers : [{ email: 'preview@csinsights.com' }];
-    
-    previewUrl = await emailService.sendNewsletter(req.body, recipients);
-    
     if (subscribers.length > 0) {
+      previewUrl = await emailService.sendNewsletter(req.body, subscribers);
       // Update campaign status
       campaign.status = 'SENT';
       campaign.sentAt = new Date();
@@ -87,6 +84,24 @@ const getCampaigns = async (req, res) => {
 };
 const getSubscribers = async (req, res) => {
   try {
+    // 1. Sync all registered users into Subscriber collection so no registered reader is ever missing in dashboard
+    const users = await import_User.User.find({}, 'email createdAt');
+    for (const u of users) {
+      if (u.email) {
+        const cleanEmail = u.email.trim().toLowerCase();
+        const existing = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
+        if (!existing) {
+          await import_Subscriber.Subscriber.create({
+            email: cleanEmail,
+            status: import_Subscriber.SubscriberStatus.ACTIVE,
+            subscribedAt: u.createdAt || new Date(),
+            verifiedAt: u.createdAt || new Date()
+          });
+        }
+      }
+    }
+
+    // 2. Fetch all subscribers sorted by latest
     const subscribers = await import_Subscriber.Subscriber.find().sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: subscribers.length, data: subscribers });
   } catch (error) {

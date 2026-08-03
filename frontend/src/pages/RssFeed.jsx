@@ -4,7 +4,7 @@ import { Rss, Copy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function RssFeed() {
-  const rssUrl = "https://csinsights.com/feed.xml"; // Placeholder URL
+  const rssUrl = "https://cs-insights-frontend.vercel.app/feed.xml";
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(rssUrl);
