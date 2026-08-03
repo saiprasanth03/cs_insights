@@ -55,7 +55,7 @@ export default function AdminSubscribers() {
           to="/admin/newsletters" 
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg shrink-0"
         >
-          <Send className="w-4 h-4" /> Send Campaign & Failures Log ↗
+          <Mail className="w-4 h-4" /> View Email Delivery Logs ↗
         </Link>
       </div>
 
