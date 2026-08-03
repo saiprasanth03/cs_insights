@@ -49,38 +49,6 @@ const createArticle = async (req, res) => {
     if (isSendNewsletter && article.status === 'PUBLISHED') {
       Promise.resolve().then(async () => {
         try {
-          import_NewsletterCampaign.NewsletterCampaign.create({
-            subject: article.title,
-            title: article.title,
-            contentHtml: article.content,
-            contentPlain: article.excerpt || article.title,
-            status: "SENT",
-            type: "ARTICLE",
-            createdBy: authorId,
-            sentAt: new Date()
-          }).catch(console.error);
-
-          // Sync any registered users to Subscriber collection first
-          try {
-            const users = await import_User.User.find({}, 'email createdAt');
-            for (const u of users) {
-              if (u.email) {
-                const cleanEmail = u.email.trim().toLowerCase();
-                const existing = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
-                if (!existing) {
-                  await import_Subscriber.Subscriber.create({
-                    email: cleanEmail,
-                    status: import_Subscriber.SubscriberStatus.ACTIVE,
-                    subscribedAt: u.createdAt || new Date(),
-                    verifiedAt: u.createdAt || new Date()
-                  });
-                }
-              }
-            }
-          } catch (syncErr) {
-            console.error("User sync error in createArticle:", syncErr.message);
-          }
-
           // If selectedEmails provided, filter to only those; otherwise send to all
           let subscribers;
           if (Array.isArray(selectedEmails) && selectedEmails.length > 0) {
@@ -92,7 +60,7 @@ const createArticle = async (req, res) => {
             console.log(`[NEWSLETTER] Dispatching "${article.title}" to ALL ${subscribers.length} subscribers...`);
           }
           if (subscribers && subscribers.length > 0) {
-            await emailService.sendNewsletter(
+            const dispatchResult = await emailService.sendNewsletter(
               {
                 subject: article.title,
                 title: article.title,
@@ -103,6 +71,22 @@ const createArticle = async (req, res) => {
               },
               subscribers
             );
+
+            // Log campaign details with failed recipients
+            await import_NewsletterCampaign.NewsletterCampaign.create({
+              subject: article.title,
+              title: article.title,
+              contentHtml: article.content,
+              contentPlain: article.excerpt || article.title,
+              status: dispatchResult.failedSends > 0 ? (dispatchResult.successfulSends > 0 ? 'PARTIALLY_FAILED' : 'FAILED') : 'SENT',
+              type: "ARTICLE",
+              totalRecipients: dispatchResult.totalRecipients,
+              successfulSends: dispatchResult.successfulSends,
+              failedSends: dispatchResult.failedSends,
+              failedRecipients: dispatchResult.failedRecipients || [],
+              createdBy: authorId,
+              sentAt: new Date()
+            }).catch(console.error);
           }
         } catch (err) {
           console.error('[NEWSLETTER] Background dispatch error in createArticle:', err);
@@ -162,38 +146,6 @@ const updateArticle = async (req, res) => {
     if (isSendNewsletter && article.status === 'PUBLISHED') {
       Promise.resolve().then(async () => {
         try {
-          import_NewsletterCampaign.NewsletterCampaign.create({
-            subject: article.title,
-            title: article.title,
-            contentHtml: article.content,
-            contentPlain: article.excerpt || article.title,
-            status: "SENT",
-            type: "ARTICLE",
-            createdBy: authorId,
-            sentAt: new Date()
-          }).catch(console.error);
-
-          // Sync any registered users to Subscriber collection first
-          try {
-            const users = await import_User.User.find({}, 'email createdAt');
-            for (const u of users) {
-              if (u.email) {
-                const cleanEmail = u.email.trim().toLowerCase();
-                const existing = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
-                if (!existing) {
-                  await import_Subscriber.Subscriber.create({
-                    email: cleanEmail,
-                    status: import_Subscriber.SubscriberStatus.ACTIVE,
-                    subscribedAt: u.createdAt || new Date(),
-                    verifiedAt: u.createdAt || new Date()
-                  });
-                }
-              }
-            }
-          } catch (syncErr) {
-            console.error("User sync error in updateArticle:", syncErr.message);
-          }
-
           // If selectedEmails provided, filter to only those; otherwise send to all
           let subscribers;
           if (Array.isArray(selectedEmails) && selectedEmails.length > 0) {
@@ -205,7 +157,7 @@ const updateArticle = async (req, res) => {
             console.log(`[NEWSLETTER] Dispatching update "${article.title}" to ALL ${subscribers.length} subscribers...`);
           }
           if (subscribers && subscribers.length > 0) {
-            await emailService.sendNewsletter(
+            const dispatchResult = await emailService.sendNewsletter(
               {
                 subject: article.title,
                 title: article.title,
@@ -216,6 +168,22 @@ const updateArticle = async (req, res) => {
               },
               subscribers
             );
+
+            // Log campaign details with failed recipients
+            await import_NewsletterCampaign.NewsletterCampaign.create({
+              subject: article.title,
+              title: article.title,
+              contentHtml: article.content,
+              contentPlain: article.excerpt || article.title,
+              status: dispatchResult.failedSends > 0 ? (dispatchResult.successfulSends > 0 ? 'PARTIALLY_FAILED' : 'FAILED') : 'SENT',
+              type: "ARTICLE",
+              totalRecipients: dispatchResult.totalRecipients,
+              successfulSends: dispatchResult.successfulSends,
+              failedSends: dispatchResult.failedSends,
+              failedRecipients: dispatchResult.failedRecipients || [],
+              createdBy: authorId,
+              sentAt: new Date()
+            }).catch(console.error);
           }
         } catch (err) {
           console.error('[NEWSLETTER] Background dispatch error in updateArticle:', err);

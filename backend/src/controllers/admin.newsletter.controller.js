@@ -53,22 +53,26 @@ const createCampaign = async (req, res) => {
     // Fetch all active subscribers
     const subscribers = await import_Subscriber.Subscriber.find({ status: 'ACTIVE' });
     
-    let previewUrl = null;
+    let dispatchResult = null;
     
     if (subscribers.length > 0) {
-      previewUrl = await emailService.sendNewsletter(req.body, subscribers);
-      // Update campaign status
-      campaign.status = 'SENT';
+      dispatchResult = await emailService.sendNewsletter(req.body, subscribers);
+      
+      campaign.status = dispatchResult.failedSends > 0 ? (dispatchResult.successfulSends > 0 ? 'PARTIALLY_FAILED' : 'FAILED') : 'SENT';
       campaign.sentAt = new Date();
-      campaign.metrics = { sent: subscribers.length, opened: 0, clicked: 0 };
+      campaign.totalRecipients = dispatchResult.totalRecipients;
+      campaign.successfulSends = dispatchResult.successfulSends;
+      campaign.failedSends = dispatchResult.failedSends;
+      campaign.failedRecipients = dispatchResult.failedRecipients || [];
       await campaign.save();
     }
 
     res.status(201).json({ 
       success: true, 
       data: campaign, 
-      previewUrl,
-      subscriberCount: subscribers.length
+      dispatchResult,
+      subscriberCount: subscribers.length,
+      failedRecipients: dispatchResult?.failedRecipients || []
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -84,24 +88,6 @@ const getCampaigns = async (req, res) => {
 };
 const getSubscribers = async (req, res) => {
   try {
-    // 1. Sync all registered users into Subscriber collection so no registered reader is ever missing in dashboard
-    const users = await import_User.User.find({}, 'email createdAt');
-    for (const u of users) {
-      if (u.email) {
-        const cleanEmail = u.email.trim().toLowerCase();
-        const existing = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
-        if (!existing) {
-          await import_Subscriber.Subscriber.create({
-            email: cleanEmail,
-            status: import_Subscriber.SubscriberStatus.ACTIVE,
-            subscribedAt: u.createdAt || new Date(),
-            verifiedAt: u.createdAt || new Date()
-          });
-        }
-      }
-    }
-
-    // 2. Fetch all subscribers sorted by latest
     const subscribers = await import_Subscriber.Subscriber.find().sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: subscribers.length, data: subscribers });
   } catch (error) {

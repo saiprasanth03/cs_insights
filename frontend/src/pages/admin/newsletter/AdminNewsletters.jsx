@@ -35,26 +35,29 @@ export default function AdminNewsletters() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setStatus({ type: '', message: '', previewUrl: '' });
+    setStatus({ type: '', message: '', failedRecipients: [] });
 
     try {
       const response = await api.post('/admin/newsletters', formData);
       if (response.data.success) {
         const subCount = response.data.subscriberCount || 0;
+        const failed = response.data.failedRecipients || [];
+        const successCount = subCount - failed.length;
+
         setStatus({ 
-          type: 'success',
+          type: failed.length > 0 ? 'warning' : 'success',
           message: subCount > 0 
-            ? `Newsletter successfully sent to ${subCount} active subscriber(s)!`
-            : 'Preview generated! (No active subscribers found in database yet).',
-          previewUrl: response.data.previewUrl
+            ? `Campaign processed: ${successCount}/${subCount} emails sent successfully!`
+            : 'No active subscribers found in database.',
+          failedRecipients: failed
         });
         setFormData({ subject: '', title: '', content: '', coverImage: '' });
         fetchCampaigns();
       } else {
-        setStatus({ type: 'error', message: 'Failed to send newsletter.' });
+        setStatus({ type: 'error', message: 'Failed to send newsletter.', failedRecipients: [] });
       }
     } catch (err) {
-      setStatus({ type: 'error', message: err.response?.data?.message || 'An error occurred while sending.' });
+      setStatus({ type: 'error', message: err.response?.data?.message || 'An error occurred while sending.', failedRecipients: [] });
     } finally {
       setLoading(false);
     }
@@ -71,23 +74,26 @@ export default function AdminNewsletters() {
         <div className={`mb-8 p-6 rounded-2xl flex flex-col gap-3 border ${
           status.type === 'success' 
             ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400' 
+            : status.type === 'warning'
+            ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400'
             : 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'
         }`}>
           <div className="flex items-center gap-3">
-            {status.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+            {status.type === 'success' ? <CheckCircle className="w-6 h-6 shrink-0" /> : <AlertCircle className="w-6 h-6 shrink-0" />}
             <p className="font-bold text-lg">{status.message}</p>
           </div>
-          {status.previewUrl && (
-            <div className="mt-2 pl-9">
-              <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">Click below to preview the exact HTML email that was generated:</p>
-              <a 
-                href={status.previewUrl} 
-                target="_blank" 
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-brand-600 dark:text-brand-400 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Mail className="w-4 h-4" /> View Live Rendered Email ↗
-              </a>
+
+          {status.failedRecipients && status.failedRecipients.length > 0 && (
+            <div className="mt-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="font-bold text-sm text-red-700 dark:text-red-400 mb-2">⚠️ Delivery Issues ({status.failedRecipients.length} failed):</p>
+              <ul className="space-y-1 text-xs font-mono text-red-600 dark:text-red-300">
+                {status.failedRecipients.map((item, idx) => (
+                  <li key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-red-500/10 pb-1">
+                    <span className="font-bold">{item.email}</span>
+                    <span className="opacity-80">Reason: {item.reason}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
@@ -177,30 +183,50 @@ export default function AdminNewsletters() {
                     <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Subject</th>
                     <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Date Sent</th>
                     <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Status</th>
-                    <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Recipients</th>
+                    <th className="px-6 py-4 text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Sent / Failed</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200/50 dark:divide-gray-700/50 bg-white/30 dark:bg-gray-900/30">
                   {campaigns.map(camp => (
-                    <tr key={camp._id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-900 dark:text-white truncate max-w-xs">{camp.subject}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(camp.sentAt || camp.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                          camp.status === 'SENT' ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400' :
-                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400'
-                        }`}>
-                          {camp.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-300">
-                        {camp.totalRecipients || (camp.metrics && camp.metrics.sent) || 0}
-                      </td>
-                    </tr>
+                    <React.Fragment key={camp._id}>
+                      <tr className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-gray-900 dark:text-white truncate max-w-xs">{camp.subject}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(camp.sentAt || camp.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                            camp.status === 'SENT' ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400' :
+                            camp.status === 'PARTIALLY_FAILED' ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400' :
+                            'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400'
+                          }`}>
+                            {camp.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-300">
+                          <span className="text-green-600 dark:text-green-400 font-bold">{camp.successfulSends || (camp.metrics && camp.metrics.sent) || 0} sent</span>
+                          {camp.failedSends > 0 && (
+                            <span className="text-red-500 ml-2 font-bold">({camp.failedSends} failed)</span>
+                          )}
+                        </td>
+                      </tr>
+                      {camp.failedRecipients && camp.failedRecipients.length > 0 && (
+                        <tr className="bg-red-500/5 dark:bg-red-900/10">
+                          <td colSpan="4" className="px-6 py-3">
+                            <div className="text-xs text-red-600 dark:text-red-400 font-mono">
+                              <strong>Delivery Issues:</strong>
+                              <div className="mt-1 space-y-1">
+                                {camp.failedRecipients.map((f, i) => (
+                                  <div key={i}>❌ {f.email} — Reason: {f.reason}</div>
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

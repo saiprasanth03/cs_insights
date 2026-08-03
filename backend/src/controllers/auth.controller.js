@@ -67,22 +67,6 @@ const register = async (req, res) => {
       authProviders: [import_User.AuthProvider.LOCAL]
     });
 
-    // Auto-subscribe user to newsletter
-    try {
-      const cleanEmail = email.trim().toLowerCase();
-      const existingSub = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
-      if (!existingSub) {
-        await import_Subscriber.Subscriber.create({
-          email: cleanEmail,
-          status: import_Subscriber.SubscriberStatus.ACTIVE,
-          subscribedAt: new Date(),
-          verifiedAt: new Date()
-        });
-      }
-    } catch (subErr) {
-      console.error("Auto-subscribe error on register:", subErr.message);
-    }
-
     const token = (0, import_jwt.generateToken)({ userId: user._id, roles: user.roles });
     res.cookie("token", token, {
       httpOnly: true,
@@ -182,22 +166,6 @@ const googleLogin = async (req, res) => {
         authProviders: [import_User.AuthProvider.GOOGLE],
         googleId: payload.sub
       });
-    }
-
-    // Auto-subscribe Google user to newsletter
-    try {
-      const cleanEmail = payload.email.trim().toLowerCase();
-      const existingSub = await import_Subscriber.Subscriber.findOne({ email: cleanEmail });
-      if (!existingSub) {
-        await import_Subscriber.Subscriber.create({
-          email: cleanEmail,
-          status: import_Subscriber.SubscriberStatus.ACTIVE,
-          subscribedAt: new Date(),
-          verifiedAt: new Date()
-        });
-      }
-    } catch (subErr) {
-      console.error("Auto-subscribe error on Google login:", subErr.message);
     }
 
     const jwtToken = (0, import_jwt.generateToken)({ userId: user._id, roles: user.roles });

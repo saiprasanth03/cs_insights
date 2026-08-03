@@ -171,8 +171,10 @@ class EmailService {
 
     console.log(`[NEWSLETTER] Starting parallel dispatch to ${subscribers.length} subscribers...`);
 
+    const failedRecipients = [];
     const dispatchResults = await Promise.all(subscribers.map(async (subscriber, index) => {
       let sent = false;
+      let lastError = 'No delivery provider succeeded';
 
       // Step 1: Gmail Nodemailer — Primary & Most Reliable for Primary Inbox delivery
       if (this.transporter) {
@@ -192,11 +194,12 @@ class EmailService {
           console.log(`✅ [Sub #${index + 1}] SENT via Gmail: ${subscriber.email}`);
           sent = true;
         } catch (gmailErr) {
+          lastError = `Gmail: ${gmailErr.message}`;
           console.error(`⚠️ Gmail failed for sub #${index + 1} (${subscriber.email}):`, gmailErr.message);
         }
       }
 
-      if (sent) return true;
+      if (sent) return { success: true, email: subscriber.email };
 
       // Step 2: Try Resend
       if (index < 100 && this.useResend) {
@@ -209,17 +212,19 @@ class EmailService {
             text: plainTextBody,
           });
           if (error) {
+            lastError = `Resend: ${error.message || JSON.stringify(error)}`;
             console.error(`⚠️ Resend rejected sub #${index + 1} (${subscriber.email}): ${error.message || JSON.stringify(error)}`);
           } else {
             console.log(`✅ [Sub #${index + 1}] SENT via Resend: ${subscriber.email}`);
             sent = true;
           }
         } catch (resendErr) {
+          lastError = `Resend: ${resendErr.message}`;
           console.error(`⚠️ Resend threw for sub #${index + 1} (${subscriber.email}):`, resendErr.message);
         }
       }
 
-      if (sent) return true;
+      if (sent) return { success: true, email: subscriber.email };
 
       // Step 3: Brevo API as secondary fallback
       if (brevoApiKey) {
@@ -233,20 +238,28 @@ class EmailService {
           console.log(`✅ [Sub #${index + 1}] SENT via Brevo API: ${subscriber.email}`);
           sent = true;
         } catch (brevoErr) {
+          lastError = `Brevo: ${brevoErr.message}`;
           console.error(`❌ Brevo failed for sub #${index + 1} (${subscriber.email}):`, brevoErr.message);
         }
       }
 
-      return sent;
+      if (!sent) {
+        failedRecipients.push({ email: subscriber.email, reason: lastError });
+      }
+
+      return { success: sent, email: subscriber.email, reason: lastError };
     }));
 
-    const successCount = dispatchResults.filter(Boolean).length;
-    console.log(`✅ Parallel email dispatch completed: ${successCount}/${subscribers.length} sent successfully.`);
+    const successfulCount = dispatchResults.filter(r => r.success).length;
+    const failedCount = failedRecipients.length;
+    console.log(`✅ Parallel email dispatch completed: ${successfulCount}/${subscribers.length} sent successfully, ${failedCount} failed.`);
 
     return {
-      success: successCount > 0,
-      sentCount: successCount,
-      totalCount: subscribers.length
+      success: successfulCount > 0,
+      totalRecipients: subscribers.length,
+      successfulSends: successfulCount,
+      failedSends: failedCount,
+      failedRecipients: failedRecipients
     };
   }
 

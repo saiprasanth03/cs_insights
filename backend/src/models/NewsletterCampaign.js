@@ -64,6 +64,12 @@ const NewsletterCampaignSchema = new import_mongoose.Schema(
     totalRecipients: { type: Number, default: 0 },
     successfulSends: { type: Number, default: 0 },
     failedSends: { type: Number, default: 0 },
+    failedRecipients: [
+      {
+        email: { type: String },
+        reason: { type: String }
+      }
+    ],
     createdBy: { type: import_mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     sentAt: { type: Date }
   },
