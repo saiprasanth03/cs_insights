@@ -43,12 +43,13 @@ const addComment = async (req, res) => {
     if (!article) return res.status(404).json({ success: false, message: "Article not found" });
     if (article.allowComments === false) return res.status(403).json({ success: false, message: "Comments are disabled for this article" });
 
-    const comment = await import_Comment.Comment.create({
+    let comment = await import_Comment.Comment.create({
       content,
       user: userId,
       article: articleId,
       status: import_Comment.CommentStatus.APPROVED
     });
+    comment = await comment.populate("user", "name");
     res.status(201).json({ success: true, message: "Comment posted", data: comment });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

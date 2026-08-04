@@ -90,8 +90,9 @@ export default function ArticleView() {
     try {
       const res = await api.post(`/articles/${article._id}/comments`, { content: newComment });
       if (res.data.success) {
-        toast.success('Comment submitted and pending approval!');
+        toast.success('Comment posted successfully!');
         setNewComment('');
+        fetchComments(article._id);
       }
     } catch (err) {
       toast.error('You must be logged in to comment.');
