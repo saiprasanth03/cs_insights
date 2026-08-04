@@ -85,7 +85,8 @@ const getCampaigns = async (req, res) => {
     // Fallback: If no explicit campaign records logged yet, list all articles as delivery logs
     if (campaigns.length === 0) {
       const import_Article = require("../models/Article");
-      const articles = await import_Article.Article.find().sort({ publishedAt: -1, createdAt: -1 });
+      const ArticleModel = import_Article.Article || import_Article.default || import_Article;
+      const articles = await ArticleModel.find().sort({ publishedAt: -1, createdAt: -1 });
       campaigns = articles.map(art => ({
         _id: art._id,
         title: art.title,
