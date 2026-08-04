@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MessageSquare, CheckCircle, XCircle, Trash2, Reply, Search, AlertCircle } from 'lucide-react';
+import { MessageSquare, Edit3, Trash2, Reply, Search, AlertCircle, Save, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../../api/axios';
 
@@ -7,10 +7,11 @@ export default function AdminComments() {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [replyingId, setReplyingId] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
 
   const fetchComments = async () => {
     setLoading(true);
@@ -32,17 +33,25 @@ export default function AdminComments() {
     fetchComments();
   }, []);
 
-  const handleModerate = async (id, status) => {
+  const handleStartEdit = (comment) => {
+    setEditingId(comment._id);
+    setEditText(comment.content);
+  };
+
+  const handleSaveEdit = async (id) => {
+    if (!editText.trim()) return;
     try {
-      const res = await api.put(`/admin/comments/${id}/moderate`, { status });
+      const res = await api.put(`/admin/comments/${id}`, { content: editText });
       if (res.data.success) {
-        toast.success(`Comment status updated to ${status}`);
-        setComments(comments.map(c => c._id === id ? { ...c, status } : c));
+        toast.success('Comment updated successfully');
+        setComments(comments.map(c => c._id === id ? { ...c, content: editText } : c));
+        setEditingId(null);
+        setEditText('');
       } else {
         toast.error(res.data.message || 'Failed to update comment');
       }
     } catch (err) {
-      toast.error('An error occurred');
+      toast.error('An error occurred while saving comment');
     }
   };
 
@@ -51,7 +60,7 @@ export default function AdminComments() {
     try {
       const res = await api.delete(`/admin/comments/${id}`);
       if (res.data.success) {
-        toast.success('Comment deleted');
+        toast.success('Comment deleted successfully');
         setComments(comments.filter(c => c._id !== id));
       } else {
         toast.error('Failed to delete comment');
@@ -79,21 +88,20 @@ export default function AdminComments() {
   };
 
   const filteredComments = comments.filter(c => {
-    const matchesStatus = filterStatus === 'ALL' || (c.status && c.status.toLowerCase() === filterStatus.toLowerCase());
     const matchesSearch = 
       (c.content || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.article?.title || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
+    return matchesSearch;
   });
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Review & Moderate Comments</h1>
-          <p className="text-gray-500 dark:text-gray-400">Manage reader feedback, approve/reject comments, and respond as admin.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Manage & Edit Comments</h1>
+          <p className="text-gray-500 dark:text-gray-400">All comments post directly. Edit, delete, or reply to reader feedback below.</p>
         </div>
       </div>
 
@@ -104,35 +112,19 @@ export default function AdminComments() {
         </div>
       )}
 
-      {/* Filter & Search Bar */}
+      {/* Search Bar */}
       <div className="glass rounded-2xl p-4 mb-8 border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(st => (
-            <button
-              key={st}
-              onClick={() => setFilterStatus(st)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                filterStatus === st 
-                  ? 'bg-brand-600 text-white shadow-md' 
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              {st} {st === 'PENDING' && comments.filter(c => c.status === 'PENDING' || c.status === 'pending').length > 0 && (
-                <span className="ml-1 bg-amber-500 text-white px-1.5 py-0.5 rounded-full text-[10px]">
-                  {comments.filter(c => c.status === 'PENDING' || c.status === 'pending').length}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          Total Reader Comments: <span className="text-brand-500 font-bold">{comments.length}</span>
         </div>
 
-        <div className="relative w-full md:w-72">
+        <div className="relative w-full md:w-80">
           <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search comment, user or article..."
+            placeholder="Search comment, reader or article..."
             className="w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"
           />
         </div>
@@ -146,7 +138,7 @@ export default function AdminComments() {
           <div className="p-16 text-center text-gray-500 dark:text-gray-400">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400 opacity-50" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No comments found</h3>
-            <p className="text-sm">No reader comments matching the selected filter.</p>
+            <p className="text-sm">When readers post comments on your articles, they will appear here directly.</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200/50 dark:divide-gray-800/50">
@@ -167,23 +159,37 @@ export default function AdminComments() {
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                      comment.status === 'APPROVED' || comment.status === 'approved'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400'
-                        : comment.status === 'REJECTED' || comment.status === 'rejected'
-                        ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400'
-                        : 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400'
-                    }`}>
-                      {comment.status || 'APPROVED'}
-                    </span>
+                {/* Comment Content or Edit Input */}
+                {editingId === comment._id ? (
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      rows="3"
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="w-full bg-white dark:bg-black/60 border border-brand-500 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none font-sans"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg text-xs font-bold"
+                      >
+                        <X className="w-3.5 h-3.5" /> Cancel
+                      </button>
+                      <button
+                        onClick={() => handleSaveEdit(comment._id)}
+                        className="inline-flex items-center gap-1 px-4 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold"
+                      >
+                        <Save className="w-3.5 h-3.5" /> Save Changes
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="text-gray-800 dark:text-gray-200 text-sm bg-gray-50 dark:bg-black/40 p-4 rounded-2xl border border-gray-200/50 dark:border-gray-800/50 font-sans leading-relaxed">
-                  {comment.content}
-                </div>
+                ) : (
+                  <div className="text-gray-800 dark:text-gray-200 text-sm bg-gray-50 dark:bg-black/40 p-4 rounded-2xl border border-gray-200/50 dark:border-gray-800/50 font-sans leading-relaxed">
+                    {comment.content}
+                  </div>
+                )}
 
                 {comment.adminReply && (
                   <div className="ml-6 p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl text-xs text-brand-700 dark:text-brand-300 flex flex-col gap-1">
@@ -195,25 +201,15 @@ export default function AdminComments() {
                 {/* Actions Row */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                   <div className="flex items-center gap-2">
-                    {comment.status !== 'APPROVED' && (
-                      <button
-                        onClick={() => handleModerate(comment._id, 'APPROVED')}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-700 dark:text-green-400 rounded-lg text-xs font-bold transition-all"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Approve
-                      </button>
-                    )}
-                    {comment.status !== 'REJECTED' && (
-                      <button
-                        onClick={() => handleModerate(comment._id, 'REJECTED')}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg text-xs font-bold transition-all"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Reject
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleStartEdit(comment)}
+                      className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 rounded-lg text-xs font-bold transition-all"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" /> Edit Comment
+                    </button>
                     <button
                       onClick={() => setReplyingId(replyingId === comment._id ? null : comment._id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 rounded-lg text-xs font-bold transition-all"
+                      className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold transition-all"
                     >
                       <Reply className="w-3.5 h-3.5" /> Reply
                     </button>
@@ -221,9 +217,9 @@ export default function AdminComments() {
 
                   <button
                     onClick={() => handleDelete(comment._id)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold transition-all ml-auto"
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold transition-all ml-auto"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                    <Trash2 className="w-3.5 h-3.5" /> Delete Comment
                   </button>
                 </div>
 

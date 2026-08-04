@@ -82,15 +82,15 @@ const getCampaigns = async (req, res) => {
   try {
     let campaigns = await import_NewsletterCampaign.NewsletterCampaign.find().sort({ createdAt: -1 });
 
-    // Fallback: If no explicit campaign records logged yet, list published articles as delivery logs
+    // Fallback: If no explicit campaign records logged yet, list all articles as delivery logs
     if (campaigns.length === 0) {
       const import_Article = require("../models/Article");
-      const articles = await import_Article.Article.find({ status: 'PUBLISHED' }).sort({ publishedAt: -1, createdAt: -1 });
+      const articles = await import_Article.Article.find().sort({ publishedAt: -1, createdAt: -1 });
       campaigns = articles.map(art => ({
         _id: art._id,
         title: art.title,
         subject: art.title,
-        status: 'SENT',
+        status: art.status === 'PUBLISHED' ? 'SENT' : (art.status || 'DRAFT'),
         totalRecipients: 0,
         successfulSends: 0,
         failedSends: 0,

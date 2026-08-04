@@ -23,6 +23,7 @@ __export(comment_controller_exports, {
   moderateComment: () => moderateComment,
   getArticleComments: () => getArticleComments,
   deleteComment: () => deleteComment,
+  updateComment: () => updateComment,
   replyToComment: () => replyToComment
 });
 module.exports = __toCommonJS(comment_controller_exports);
@@ -57,7 +58,7 @@ const addComment = async (req, res) => {
 const getArticleComments = async (req, res) => {
   try {
     const articleId = req.params.id;
-    const comments = await import_Comment.Comment.find({ article: articleId, status: import_Comment.CommentStatus.APPROVED })
+    const comments = await import_Comment.Comment.find({ article: articleId })
       .populate("user", "name")
       .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: comments.length, data: comments });
@@ -113,6 +114,22 @@ const replyToComment = async (req, res) => {
       { adminReply }, 
       { new: true }
     );
+    if (!comment) return res.status(404).json({ success: false, message: "Comment not found" });
+    res.status(200).json({ success: true, data: comment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateComment = async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ success: false, message: "Content is required" });
+    const comment = await import_Comment.Comment.findByIdAndUpdate(
+      req.params.id,
+      { content },
+      { new: true }
+    ).populate("user", "name email").populate("article", "title slug");
     if (!comment) return res.status(404).json({ success: false, message: "Comment not found" });
     res.status(200).json({ success: true, data: comment });
   } catch (error) {

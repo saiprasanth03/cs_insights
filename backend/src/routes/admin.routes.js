@@ -38,7 +38,7 @@ router.route("/articles").get(import_admin_article.getArticles).post(import_admi
 router.route("/articles/:id").get(import_admin_article.getArticle).put(import_admin_article.updateArticle).delete(import_admin_article.deleteArticle);
 router.route("/comments").get(import_comment.getCommentsForModeration);
 router.route("/comments/:id/moderate").put(import_comment.moderateComment);
-router.route("/comments/:id").delete(import_comment.deleteComment);
+router.route("/comments/:id").put(import_comment.updateComment).delete(import_comment.deleteComment);
 router.route("/comments/:id/reply").post(import_comment.replyToComment);
 router.route("/subscribers").get(import_admin_newsletter.getSubscribers);
 router.route("/authors").get(import_admin_author.getAuthors).post(import_admin_author.createAuthor);
