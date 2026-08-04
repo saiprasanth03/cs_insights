@@ -40,13 +40,24 @@ const getArticles = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const articles = await import_Article.Article.find(query).populate("category", "name slug").populate("author", "name").sort(sort).skip(skip).limit(parseInt(limit));
     const total = await import_Article.Article.countDocuments(query);
+    
+    const import_Comment = require("../models/Comment");
+    const articlesWithCounts = await Promise.all(
+      articles.map(async (art) => {
+        const commentsCount = await import_Comment.Comment.countDocuments({ article: art._id });
+        const artObj = art.toObject();
+        artObj.commentsCount = commentsCount;
+        return artObj;
+      })
+    );
+
     res.status(200).json({
       success: true,
-      count: articles.length,
+      count: articlesWithCounts.length,
       total,
       totalPages: Math.ceil(total / parseInt(limit)),
       currentPage: parseInt(page),
-      data: articles
+      data: articlesWithCounts
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

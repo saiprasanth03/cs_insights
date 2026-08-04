@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, BookOpen, Layers, Code, BrainCircuit, Sparkles, Clock, Tag, Mail, Send, CheckCircle } from "lucide-react";
+import { ArrowRight, BookOpen, Layers, Code, BrainCircuit, Sparkles, Clock, Tag, Mail, Send, CheckCircle, Heart, MessageSquare } from "lucide-react";
 import { Helmet } from 'react-helmet-async';
 import toast from 'react-hot-toast';
 import SearchBar from "@/components/ui/SearchBar";
@@ -153,8 +153,18 @@ export default function Home() {
                     <p className="text-gray-600 dark:text-gray-400 line-clamp-3 mb-6 flex-1">
                       {article.excerpt}
                     </p>
-                    <div className="flex items-center text-brand-600 dark:text-brand-400 font-semibold group-hover:translate-x-1 transition-transform mt-auto">
-                      Read Article <ArrowRight className="w-4 h-4 ml-1.5" />
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-200/40 dark:border-gray-800/40 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1.5 font-medium text-red-500">
+                          <Heart className="w-3.5 h-3.5 fill-red-500/20" /> {article.likes || 0} Likes
+                        </span>
+                        <span className="flex items-center gap-1.5 font-medium text-brand-500">
+                          <MessageSquare className="w-3.5 h-3.5" /> {article.commentsCount || 0} Comments
+                        </span>
+                      </div>
+                      <div className="flex items-center text-brand-600 dark:text-brand-400 font-semibold group-hover:translate-x-1 transition-transform">
+                        Read Article <ArrowRight className="w-4 h-4 ml-1.5" />
+                      </div>
                     </div>
                   </div>
                 </Link>

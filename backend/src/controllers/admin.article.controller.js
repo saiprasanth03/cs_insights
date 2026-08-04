@@ -111,7 +111,16 @@ const createArticle = async (req, res) => {
 const getArticles = async (req, res) => {
   try {
     const articles = await import_Article.Article.find().sort({ createdAt: -1 }).populate("category", "name slug").populate("author", "name email");
-    res.status(200).json({ success: true, count: articles.length, data: articles });
+    const import_Comment = require("../models/Comment");
+    const articlesWithCounts = await Promise.all(
+      articles.map(async (art) => {
+        const commentsCount = await import_Comment.Comment.countDocuments({ article: art._id });
+        const artObj = art.toObject();
+        artObj.commentsCount = commentsCount;
+        return artObj;
+      })
+    );
+    res.status(200).json({ success: true, count: articlesWithCounts.length, data: articlesWithCounts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
