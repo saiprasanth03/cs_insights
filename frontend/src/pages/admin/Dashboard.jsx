@@ -110,7 +110,7 @@ export default function AdminDashboard() {
               Manage Topics (Categories)
             </Link>
             <Link to="/admin/comments" className="px-6 py-4 glass bg-white dark:bg-black/40 hover:bg-gray-50 dark:hover:bg-black/60 text-gray-900 dark:text-white rounded-2xl text-left font-medium transition-all hover:-translate-y-1 border border-gray-200/50 dark:border-gray-700/50">
-              Review Comments ({stats.pendingComments})
+              Manage Comments ({stats.totalComments ?? stats.pendingComments ?? 0})
             </Link>
             <Link to="/admin/authors" className="px-6 py-4 glass bg-white dark:bg-black/40 hover:bg-gray-50 dark:hover:bg-black/60 text-gray-900 dark:text-white rounded-2xl text-left font-medium transition-all hover:-translate-y-1 border border-gray-200/50 dark:border-gray-700/50">
               Manage Authors

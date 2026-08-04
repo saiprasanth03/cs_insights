@@ -9,7 +9,7 @@ export const getDashboardStats = async () => {
     ]);
 
     const totalArticles = articlesRes.data?.data?.length || 0;
-    const pendingComments = commentsRes.data?.data?.filter(c => c.status === 'pending')?.length || 0;
+    const totalComments = commentsRes.data?.data?.length || 0;
     const newsletterSubs = newsletterRes.data?.data?.length || 0;
 
     return {
@@ -17,7 +17,8 @@ export const getDashboardStats = async () => {
       data: {
         totalArticles,
         activeUsers: 0, 
-        pendingComments,
+        pendingComments: totalComments,
+        totalComments,
         newsletterSubs,
       }
     };
