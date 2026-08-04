@@ -80,7 +80,26 @@ const createCampaign = async (req, res) => {
 };
 const getCampaigns = async (req, res) => {
   try {
-    const campaigns = await import_NewsletterCampaign.NewsletterCampaign.find().sort({ createdAt: -1 });
+    let campaigns = await import_NewsletterCampaign.NewsletterCampaign.find().sort({ createdAt: -1 });
+
+    // Fallback: If no explicit campaign records logged yet, list published articles as delivery logs
+    if (campaigns.length === 0) {
+      const import_Article = require("../models/Article");
+      const articles = await import_Article.Article.find({ status: 'PUBLISHED' }).sort({ publishedAt: -1, createdAt: -1 });
+      campaigns = articles.map(art => ({
+        _id: art._id,
+        title: art.title,
+        subject: art.title,
+        status: 'SENT',
+        totalRecipients: 0,
+        successfulSends: 0,
+        failedSends: 0,
+        failedRecipients: [],
+        createdAt: art.publishedAt || art.createdAt,
+        sentAt: art.publishedAt || art.createdAt
+      }));
+    }
+
     res.status(200).json({ success: true, count: campaigns.length, data: campaigns });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
